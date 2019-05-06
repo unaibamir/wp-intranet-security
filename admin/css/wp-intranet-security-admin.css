@@ -1,0 +1,108 @@
+.wpis-form {
+	background-color: white;
+	border: 1px solid;
+	padding: 10px;
+}
+
+.new-wpis-form {
+	display: none;
+}
+
+.wpis-form-input {
+	width: 300px !important;
+}
+
+.widefat .wpis-status {
+	width: 40px;
+}
+
+.wpis-status-active {
+	color: #008000 !important;
+}
+
+.wpis-status-expired {
+	color: #FF0000 !important;
+}
+
+.wpis-status:after {
+	border-radius: 32px;
+	color: #fff;
+	display: block;
+	font-size: 11px;
+	font-weight: bold;
+	height: 16px;
+	line-height: 17px;
+	margin-left: 8px;
+	text-align: center;
+	width: 16px;
+}
+
+.wpis-status-active:after {
+	background: #008000 none repeat scroll 0 0;
+	content: "";
+}
+
+.wpis-status-expired:after {
+	background: #FF0000 none repeat scroll 0 0;
+	content: "";
+}
+
+.cancel-new-login-form, .cancel-update-login-form {
+	cursor: pointer;
+}
+
+.wpis-wide-input {
+	width: 60%;
+}
+
+.generated-wpis-login-link {
+	border: 1px solid;
+	padding: 10px 10px 10px 10px;
+}
+
+.wpis-form-row {
+	padding-left: 20px !important;
+}
+
+.wpis-form-submit-button {
+	width: 115px;
+}
+
+.wpis-user-login {
+	font-size: 12px;
+}
+
+.wpis-copy-to-clipboard, .wpis-click-to-copy-btn {
+	cursor: pointer;
+}
+
+.wpis-copy-to-clipboard:hover {
+	color: #0073aa;
+}
+
+.copied-text-message {
+	padding: 0 20px 20px 20px;
+}
+
+.wtlp-role-radio, .wtlp-role-checkbox {
+	text-align: center;
+	padding-top: 10px;
+}
+
+.tlwp-role-name {
+	padding-top: 10px;
+}
+
+.visible-roles-dropdown {
+	min-height: 100px !important;
+	width: 200px;
+}
+
+.default-role-dropdown {
+	width: 200px;
+}
+
+#wpadminbar .temporay-access-mode-active > .ab-item {
+	color: #fff;
+	background-color: #ffba00;
+}
