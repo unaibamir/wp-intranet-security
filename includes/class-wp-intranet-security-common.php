@@ -663,12 +663,12 @@ class Wp_Intranet_Security_Common {
 		}
 
 		$a = array(
-			// 365 * 24 * 60 * 60 => 'year',
-			// 30 * 24 * 60 * 60 => 'month',
-			24 * 60 * 60 => 'day',
-			60 * 60      => 'hour',
-			60           => 'minute',
-			1            => 'second',
+			365 * 24 * 60 * 60 	=> 'year',
+			30 * 24 * 60 * 60 	=> 'month',
+			24 * 60 * 60 		=> 'day',
+			60 * 60      		=> 'hour',
+			60           		=> 'minute',
+			1            		=> 'second',
 		);
 
 		$a_plural = array(
@@ -817,7 +817,7 @@ class Wp_Intranet_Security_Common {
 		$r = '';
 
 		$editable_roles = array_reverse( get_editable_roles() );
-
+		$visible_roles = array();
 		$visible_roles = ! empty( $visible_roles ) ? $visible_roles : array_keys( $editable_roles );
 
 		/**

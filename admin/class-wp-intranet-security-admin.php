@@ -28,6 +28,13 @@ class Wp_Intranet_Security_Admin {
 	private $version;
 
 	/**
+	 * Plugin options.
+	 *
+	 * @var array $rsa_options The plugin options.
+	 */
+	private static $rsa_options;
+
+	/**
 	 * Initialize Admin Class
 	 *
 	 * @param string $plugin_name
@@ -70,11 +77,44 @@ class Wp_Intranet_Security_Admin {
 		wp_enqueue_script( 'jquery-ui-core' );
 		wp_enqueue_script( 'jquery-ui-datepicker' );
 
+		$min    = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '';
+		$folder = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : 'src/';
+
+		wp_enqueue_script(
+			'rsa-settings',
+			plugin_dir_url( __FILE__ ) . 'js/' . $folder . 'settings' . $min . '.js',
+			array( 'jquery-effects-shake' ),
+			$this->version,
+			true
+		);
+
 		$data = array(
 			'admin_ajax_url' => admin_url( 'admin-ajax.php', 'relative' ),
 		);
 
 		wp_localize_script( $this->plugin_name, 'data', $data );
+
+
+		$js_path = plugin_dir_url( __FILE__ ) . 'js/admin.min.js';
+
+		$min    = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+		$folder = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? 'src/' : '';
+
+		wp_enqueue_script(
+			'rsa-admin',
+			plugin_dir_url( __FILE__ ) . 'js/' . $folder . 'admin' . $min . '.js',
+			array( 'jquery' ),
+			$this->version,
+			true
+		);
+
+		wp_localize_script(
+			'rsa-admin',
+			'rsaAdmin',
+			array(
+				'nonce' => wp_create_nonce( 'rsa_admin_nonce' ),
+			)
+		);
 	}
 
 	/**
@@ -108,10 +148,10 @@ class Wp_Intranet_Security_Admin {
 			$is_temporary_login = true;
 		}
 
-		$active_tab = ! empty( $_GET['tab'] ) ? $_GET['tab'] : ( $is_temporary_login ? 'system-info' : 'home' );
+		$active_tab = ! empty( $_GET['tab'] ) ? $_GET['tab'] : ( $is_temporary_login ? 'system-info' : 'ip-restricts' );
 
 		if ( ! $is_temporary_login ) {
-			$wpis_generated_url = ! empty( $_REQUEST['wpis_generated_url'] ) ? $_REQUEST['wpis_generated_url'] : '';
+			$wpis_generated_url  = ! empty( $_REQUEST['wpis_generated_url'] ) ? $_REQUEST['wpis_generated_url'] : '';
 			$user_email          = ! empty( $_REQUEST['user_email'] ) ? sanitize_email( $_REQUEST['user_email'] ) : '';
 			$tlwp_settings       = maybe_unserialize( get_option( 'tlwp_settings', array() ) );
 			$action              = ! empty( $_GET['action'] ) ? $_GET['action'] : '';
@@ -132,6 +172,10 @@ class Wp_Intranet_Security_Admin {
 			$white_list_user_grpups 	= ( ! empty( $tlwp_settings ) && isset( $tlwp_settings['white_list_user_grpups'] ) ) ? $tlwp_settings['white_list_user_grpups'] : array();
 			$white_list_ld_user_groups  = ( ! empty( $tlwp_settings ) && isset( $tlwp_settings['white_list_ld_user_groups'] ) ) ? $tlwp_settings['white_list_ld_user_groups'] : array();
 			$white_list_users  			= ( ! empty( $tlwp_settings ) && isset( $tlwp_settings['white_list_users'] ) ) ? $tlwp_settings['white_list_users'] : array();
+			$rsa_options  				= ( ! empty( $tlwp_settings ) && isset( $tlwp_settings['rsa_options'] ) ) ? $tlwp_settings['rsa_options'] : array();
+
+			$client_ip_address 			= self::get_client_ip_address();
+			$config_ips 				= self::get_config_ips();
 		}
 
 		include $_template_file;
@@ -182,6 +226,7 @@ class Wp_Intranet_Security_Admin {
 			} else {
 				$result = array(
 					'status'  => 'success',
+					'tab'  => 'home',
 					'message' => 'user_created',
 				);
 
@@ -213,7 +258,23 @@ class Wp_Intranet_Security_Admin {
 			return;
 		}
 
-		$data = $_POST['tlwp_settings_data'];
+		$tlwp_settings 		= maybe_unserialize( get_option( 'tlwp_settings', array() ) );
+
+		$rsa_options 		= !empty( $_POST["tlwp_settings_data"]["rsa_options"] ) ? self::sanitize_options( $_POST["tlwp_settings_data"]["rsa_options"] ) : $tlwp_settings["rsa_options"];
+
+		$white_list_user_grpups = !empty( $_POST["tlwp_settings_data"]["white_list_user_grpups"] ) ? $_POST["tlwp_settings_data"]["white_list_user_grpups"] : $tlwp_settings["white_list_user_grpups"];
+		$white_list_users		 = !empty( $_POST["tlwp_settings_data"]["white_list_users"] ) ? $_POST["tlwp_settings_data"]["white_list_users"] : $tlwp_settings["white_list_users"];
+
+		$_POST["tlwp_settings_data"]["rsa_options"]  = $rsa_options;
+		$_POST['tlwp_settings_data']["white_list_user_grpups"]  = $white_list_user_grpups;
+		$_POST['tlwp_settings_data']["white_list_users"]  = $white_list_users;
+
+		if ( class_exists( 'SFWD_LMS' ) ) {
+			$white_list_ld_user_groups = !empty( $_POST["tlwp_settings_data"]["white_list_ld_user_groups"] ) ? $_POST["tlwp_settings_data"]["white_list_ld_user_groups"] : $tlwp_settings["white_list_ld_user_groups"];
+			$_POST['tlwp_settings_data']["white_list_ld_user_groups"]  = $white_list_ld_user_groups;
+		}
+
+		$data 						= $_POST['tlwp_settings_data'];
 
 		$default_role        		= isset( $data['default_role'] ) ? $data['default_role'] : 'administrator';
 		$default_expiry_time 		= isset( $data['default_expiry_time'] ) ? $data['default_expiry_time'] : 'week';
@@ -222,6 +283,7 @@ class Wp_Intranet_Security_Admin {
 		$white_list_ld_user_groups	= isset( $data['white_list_ld_user_groups'] ) ? $data['white_list_ld_user_groups'] : array();
 		$white_list_users			= isset( $data['white_list_users'] ) ? $data['white_list_users'] : array();
 		$ip_restricted       		= isset( $data['ip_restricted'] ) ? $data['ip_restricted'] : array();
+		$rsa_options       			= isset( $data["rsa_options"] ) ? $data["rsa_options"] : array();
 
 
 		if ( ! in_array( $default_role, $visible_roles ) ) {
@@ -235,7 +297,7 @@ class Wp_Intranet_Security_Admin {
 			'white_list_user_grpups'    => $white_list_user_grpups,
 			'white_list_ld_user_groups' => $white_list_ld_user_groups,
 			'white_list_users' 			=> $white_list_users,
-			'ip_restricted'		  		=> $ip_restricted
+			'rsa_options'		  		=> $rsa_options
 		);
 
 		update_option( 'tlwp_settings', "");
@@ -375,6 +437,7 @@ class Wp_Intranet_Security_Admin {
 					$result = array(
 						'status'  => 'success',
 						'message' => 'user_updated',
+						'tab'	  => 'home'
 					);
 				} else {
 					$result = array(
@@ -453,119 +516,6 @@ class Wp_Intranet_Security_Admin {
 	}
 
 	/**
-	 * Disable welcome notification for temporary user.
-	 *
-	 * @param int $blog_id
-	 * @param int $user_id
-	 * @param string $password
-	 * @param string $title
-	 * @param string $meta
-	 *
-	 * @return bool
-	 */
-	public function disable_welcome_notification( $blog_id, $user_id, $password, $title, $meta ) {
-
-		if ( ! empty( $user_id ) ) {
-			$check_expiry = false;
-			if ( Wp_Intranet_Security_Common::is_valid_temporary_login( $user_id, $check_expiry ) ) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	/**
-	 * Change the admin footer text on temporary login admin pages.
-	 *
-	 * @since  1.4.3
-	 *
-	 * @param  string $footer_text
-	 *
-	 * @return string
-	 */
-	public function admin_footer_text( $footer_text ) {
-
-		$current_screen = get_current_screen();
-
-		if ( isset( $current_screen->id ) && 'settings_page_wp-intranet-security' === $current_screen->id ) {
-
-			$current_user_id    = get_current_user_id();
-			$can_ask_for_review = true; //Wp_Intranet_Security_Common::can_ask_for_review( $current_user_id );
-
-			// Change the footer text.
-			if ( $can_ask_for_review ) {
-				$footer_text = sprintf( __( 'If you like <strong>WP Intranet Security</strong> plugin, please leave us a %s rating. A huge thanks in advance!', WPIS_LANG ), '<a href="https://wordpress.org/support/plugin/temporary-login-without-password/reviews" target="_blank" class="tlwp-rating-link" data-rated="' . esc_attr__( 'Thank You :) ', WPIS_LANG ) . '">&#9733;&#9733;&#9733;&#9733;&#9733;</a>' );
-			} else {
-				$footer_text = sprintf( __( 'Thank you for using %s.', WPIS_LANG ), '<a href="https://wordpress.org/plugins/temporary-login-without-password/" target="_blank">WP Intranet Security</a>' );
-			}
-		}
-
-		return $footer_text;
-	}
-
-	/**
-	 * Triggered when clicking the rating footer.
-	 */
-	public static function tlwp_rated() {
-		$current_user_id = get_current_user_id();
-		update_user_meta( $current_user_id, 'tlwp_admin_footer_text_rated', 1 );
-		update_user_meta( $current_user_id, 'tlwp_review_time', time() );
-		update_user_meta( $current_user_id, 'tlwp_review_from', 'footer' );
-		wp_die();
-	}
-
-	/**
-	 * Triggered when clicking the rating link from header.
-	 */
-	public static function tlwp_reivew_header() {
-		$current_user_id = get_current_user_id();
-		update_user_meta( $current_user_id, 'tlwp_admin_header_text_rated', 1 );
-		update_user_meta( $current_user_id, 'tlwp_review_time', time() );
-		update_user_meta( $current_user_id, 'tlwp_review_from', 'header' );
-		wp_die();
-	}
-
-	/**
-	 * Prepare a HTML for the review
-	 *
-	 * @since 1.4.5
-	 */
-	public function tlwp_ask_user_for_review() {
-
-		$current_user_id = get_current_user_id();
-
-		$nobug = '';
-
-		if ( isset( $_GET['tlwp_nobug'] ) ) { // Input var okay.
-			$nobug = absint( esc_attr( wp_unslash( $_GET['tlwp_nobug'] ) ) );
-		}
-
-		if ( 1 === $nobug ) {
-			update_user_meta( $current_user_id, 'tlwp_no_bug', 1 );
-			update_user_meta( $current_user_id, 'tlwp_no_bug_time', time() );
-		}
-
-		$current_user_id    = get_current_user_id();
-		$can_ask_for_review = Wp_Intranet_Security_Common::can_ask_for_review( $current_user_id );
-
-		if ( $can_ask_for_review ) {
-
-			$reviewurl = 'https://wordpress.org/support/plugin/temporary-login-without-password/reviews/';
-
-			$current_page_url = "//" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-
-			$nobugurl = add_query_arg( 'tlwp_nobug', 1, $current_page_url );
-
-			echo '<div class="notice notice-warning">';
-
-			echo sprintf( __( '<p>You have been using <b>WP Intranet Security</b> plugin, do you like it? If so, please leave us a review with your feedback! <a href="%s" class="tlwp-rating-link-header" target="_blank" data-rated="' . esc_attr__( 'Thank You :) ', WPIS_LANG ) . '">Leave A Review</a> <a href="%s">No, Thanks</a></p>' ), esc_url( $reviewurl ), esc_url( $nobugurl ) );
-
-			echo '</div>';
-		}
-	}
-
-	/**
 	 *
 	 * Disable plugin deactivation link for the temporary user
 	 *
@@ -600,7 +550,8 @@ class Wp_Intranet_Security_Admin {
 	 */
 	public function plugin_add_settings_link( $links ) {
 
-		$settings_link = '<a href="options-general.php?page=wp-intranet-security&tab=ip-restricts">' . __( 'Settings' ) . '</a>';
+		$settings_link = '<a href="'. admin_url( "options-reading.php" ) .'">' . __( 'Site Visibility' ) . '</a>';
+		$settings_link .= ' | <a href="'. admin_url( "options-general.php?page=wp-intranet-security" ) .'">' . __( 'Settings' ) . '</a>';
 		$links[]       = $settings_link;
 
 		return $links;
@@ -636,6 +587,396 @@ class Wp_Intranet_Security_Admin {
 
 		return true;
 
+	}
+
+
+	/**
+	 * Retrieve the visitor ip address, even it is behind a proxy.
+	 *
+	 * @return string
+	 */
+	public static function get_client_ip_address() {
+		$ip      = '';
+		$headers = array(
+			'HTTP_CLIENT_IP',
+			'HTTP_X_FORWARDED_FOR',
+			'HTTP_X_FORWARDED',
+			'HTTP_X_CLUSTER_CLIENT_IP',
+			'HTTP_FORWARDED_FOR',
+			'HTTP_FORWARDED',
+			'REMOTE_ADDR',
+		);
+		foreach ( $headers as $key ) {
+
+			if ( ! isset( $_SERVER[ $key ] ) ) {
+				continue;
+			}
+
+			foreach ( explode(
+				',',
+				sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) )
+			) as $ip ) {
+				$ip = trim( $ip ); // just to be safe.
+
+				if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) !== false ) {
+					return $ip;
+				}
+			}
+		}
+
+		return $ip;
+	}
+
+
+	/**
+	 * Gets an array of valid IP addresses from constant.
+	 *
+	 * @return array
+	 */
+	public static function get_config_ips() {
+		if ( ! defined( 'RSA_IP_WHITELIST' ) || ! RSA_IP_WHITELIST ) {
+			return array();
+		}
+
+		if ( ! is_string( RSA_IP_WHITELIST ) ) {
+			return array();
+		}
+
+		// Filter out valid IPs from configured ones.
+		$raw_ips   = explode( '|', RSA_IP_WHITELIST );
+		$valid_ips = array();
+		foreach ( $raw_ips as $ip ) {
+			$trimmed = trim( $ip );
+			if ( self::is_ip( $trimmed ) ) {
+				$valid_ips[] = $trimmed;
+			}
+		}
+		return $valid_ips;
+	}
+
+	/**
+	 * Validate IP address entry on demand (AJAX).
+	 *
+	 * @codeCoverageIgnore
+	 */
+	public function ajax_rsa_ip_check() {
+		if ( ! check_ajax_referer( 'rsa_admin_nonce', 'nonce', false ) ) {
+			wp_send_json_error();
+			exit;
+		}
+
+		if ( empty( $_POST['ip_address'] ) || ! self::is_ip( stripslashes( sanitize_text_field( wp_unslash( $_POST['ip_address'] ) ) ) ) ) {
+			die( '1' );
+		}
+		die;
+	}
+
+	/**
+	 * Is it a valid IP address? v4/v6 with subnet range.
+	 *
+	 * @param string $ip_address IP Address to check.
+	 *
+	 * @return bool True if its a valid IP address.
+	 */
+	public static function is_ip( $ip_address ) {
+		// very basic validation of ranges.
+		if ( strpos( $ip_address, '/' ) ) {
+			$ip_parts = explode( '/', $ip_address );
+			if ( empty( $ip_parts[1] ) || ! is_numeric( $ip_parts[1] ) || strlen( $ip_parts[1] ) > 3 ) {
+				return false;
+			}
+			$ip_address = $ip_parts[0];
+		}
+
+		// confirm IP part is a valid IPv6 or IPv4 IP.
+		if ( empty( $ip_address ) || ! self::inet_pton( stripslashes( $ip_address ) ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+
+	/**
+	 * Sanitize RSA options.
+	 *
+	 * @param array $input The options to sanitize.
+	 *
+	 * @return array Sanitized input
+	 */
+	public static function sanitize_options( $input ) {
+		$new_input['approach'] = (int) $input['approach'];
+		if ( $new_input['approach'] < 1 || $new_input['approach'] > 4 ) {
+			$new_input['approach'] = 1;
+		}
+
+		global $allowedtags;
+		$new_input['message'] = wp_kses( $input['message'], $allowedtags );
+
+		$new_input['redirect_path'] = empty( $input['redirect_path'] ) ? 0 : 1;
+		$new_input['head_code']     = in_array( (int) $input['head_code'], array( 301, 302, 307 ), true ) ? (int) $input['head_code'] : 302;
+		$new_input['redirect_url']  = empty( $input['redirect_url'] ) ? '' : esc_url_raw( $input['redirect_url'], array( 'http', 'https' ) );
+		$new_input['page']          = empty( $input['page'] ) ? 0 : (int) $input['page'];
+
+		$new_input['allowed'] = array();
+		if ( ! empty( $input['allowed'] ) && is_array( $input['allowed'] ) ) {
+			foreach ( $input['allowed'] as $ip_address ) {
+				if ( self::is_ip( $ip_address ) ) {
+					$new_input['allowed'][] = $ip_address;
+				}
+			}
+		}
+		$new_input['comment'] = array();
+		if ( ! empty( $input['comment'] ) && is_array( $input['comment'] ) ) {
+			foreach ( $input['comment'] as $comment ) {
+				if ( is_scalar( $comment ) && !empty( $comment ) ) {
+					$new_input['comment'][] = sanitize_text_field( $comment );
+				}
+			}
+		}
+
+		return $new_input;
+	}
+
+
+	/**
+	 * Add a new choice to the privacy selector.
+	 */
+	public static function blog_privacy_selector() {
+		global $wp;
+		$is_restricted = ( 2 === (int) get_option( 'blog_public' ) );
+		$is_restricted = apply_filters( 'restricted_site_access_is_restricted', $is_restricted, $wp );
+		?>
+		<p>
+			<input id="blog-restricted" type="radio" name="blog_public" value="2" <?php checked( $is_restricted ); ?> />
+			<label for="blog-restricted"><?php esc_html_e( 'Restrict site access to visitors who are logged in or allowed by IP address', 'restricted-site-access' ); ?></label>
+		</p>
+		<?php
+	}
+
+
+	/**
+	 * Redirects restricted requests.
+	 *
+	 * @param array $wp WordPress request.
+	 * @codeCoverageIgnore
+	 */
+	public static function restrict_access( $wp ) {
+
+		$results = self::restrict_access_check( $wp );
+
+		if ( is_array( $results ) && ! empty( $results ) ) {
+
+			// Don't redirect during unit tests.
+			if ( ! empty( $results['url'] ) && ! defined( 'WP_TESTS_DOMAIN' ) ) {
+				wp_redirect( $results['url'], $results['code'] ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
+				die();
+			}
+
+			// Don't die during unit tests.
+			if ( ! empty( $results['die_message'] ) && ! defined( 'WP_TESTS_DOMAIN' ) ) {
+				wp_die( wp_kses_post( $results['die_message'] ), esc_html( $results['die_title'] ), array( 'response' => esc_html( $results['die_code'] ) ) );
+			}
+		}
+	}
+
+
+	/**
+	 * Determine whether page should be restricted at point of request.
+	 *
+	 * @param array $wp WordPress The main WP request.
+	 * @return array              List of URL and code, otherwise empty.
+	 */
+	public static function restrict_access_check( $wp ) {
+
+		$tlwp_settings     = maybe_unserialize( get_option( 'tlwp_settings', array() ) );
+		self::$rsa_options = $tlwp_settings["rsa_options"];
+		$is_restricted     = self::is_restricted();
+
+		// Check to see if it's _not_ restricted.
+		if ( apply_filters( 'restricted_site_access_is_restricted', $is_restricted, $wp ) === false ) {
+			return;
+		}
+
+		$allowed_ips = self::get_config_ips();
+		if ( !empty( self::$rsa_options['allowed'] ) && is_array( self::$rsa_options['allowed'] ) ) {
+			$allowed_ips = array_merge( $allowed_ips, self::$rsa_options['allowed'] );
+		}
+
+		// check for the allow list, if its empty block everything.
+		if ( count( $allowed_ips ) > 0 ) {
+			$remote_ip = self::get_client_ip_address();
+
+			// iterate through the allow list.
+			foreach ( $allowed_ips as $line ) {
+				if ( self::ip_in_range( $remote_ip, $line ) ) {
+
+					/**
+					 * Fires when an ip address match occurs.
+					 *
+					 * Enables adding session_start() to the IP check, ensuring Varnish type cache will
+					 * not cache the request. Passes the matched line; previous to 6.1.0 this action passed
+					 * the matched ip and mask.
+					 *
+					 * @since 6.0.2
+					 *
+					 * @param string $remote_ip The remote IP address being checked.
+					 * @param string $line      The matched masked IP address.
+					 */
+					do_action( 'restrict_site_access_ip_match', $remote_ip, $line );
+					return;
+				}
+			}
+		}
+
+		$rsa_restrict_approach = apply_filters( 'restricted_site_access_approach', self::$rsa_options['approach'] );
+		do_action( 'restrict_site_access_handling', $rsa_restrict_approach, $wp ); // allow users to hook handling.
+
+		switch ( $rsa_restrict_approach ) {
+			case 4: // Show them a page.
+				if ( ! empty( self::$rsa_options['page'] ) ) {
+					$page = get_post( self::$rsa_options['page'] );
+
+					// If the selected page isn't found or isn't published, fall back to default values.
+					if ( ! $page || 'publish' !== $page->post_status ) {
+						self::$rsa_options['head_code']    = 302;
+						$current_path                      = empty( $_SERVER['REQUEST_URI'] ) ? home_url() : sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+						self::$rsa_options['redirect_url'] = wp_login_url( $current_path );
+						break;
+					}
+
+					// Are we already on the selected page?
+					$on_selected_page = false;
+					if ( isset( $wp->query_vars['page_id'] ) && absint( $wp->query_vars['page_id'] ) === $page->ID ) {
+						$on_selected_page = true;
+					}
+
+					if ( ! $on_selected_page && ( isset( $wp->query_vars['pagename'] ) && $wp->query_vars['pagename'] === $page->post_name ) ) {
+						$on_selected_page = true;
+					}
+
+					// There's a separate unpleasant conditional to match the page on front because of the way query vars are (not) filled at this point.
+					if ( $on_selected_page || ( empty( $wp->query_vars ) && 'page' === get_option( 'show_on_front' ) && (int) get_option( 'page_on_front' ) === (int) self::$rsa_options['page'] ) ) {
+						return;
+					}
+
+					self::$rsa_options['redirect_url'] = get_permalink( $page->ID );
+					break;
+				}
+				// Fall thru to case 3 if case 2 not handled.
+			case 3:
+				$message  = esc_html( self::$rsa_options['message'] );
+				$message  = apply_filters( 'restricted_site_access_message', $message, $wp );
+
+				return array(
+					'die_message' => $message,
+					'die_title'   => esc_html( get_bloginfo( 'name' ) ) . ' - Site Access Restricted',
+					'die_code'    => 403,
+				);
+
+			case 2:
+				if ( ! empty( self::$rsa_options['redirect_url'] ) ) {
+					if ( ! empty( self::$rsa_options['redirect_path'] ) ) {
+						self::$rsa_options['redirect_url'] = untrailingslashit( self::$rsa_options['redirect_url'] ) . sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+					}
+					break;
+				}
+				// No break, fall thru to default.
+			default:
+				self::$rsa_options['head_code']    = 302;
+				$current_path                      = empty( $_SERVER['REQUEST_URI'] ) ? home_url() : sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+				self::$rsa_options['redirect_url'] = wp_login_url( $current_path );
+		}
+
+		$redirect_url  = apply_filters( 'restricted_site_access_redirect_url', self::$rsa_options['redirect_url'], $wp );
+		$redirect_code = apply_filters( 'restricted_site_access_head', self::$rsa_options['head_code'], $wp );
+
+		return array(
+			'url'  => $redirect_url,
+			'code' => $redirect_code,
+		);
+	}
+
+
+	/**
+	 * Determine if site should be restricted
+	 */
+	protected static function is_restricted() {
+
+		$blog_public = get_option( 'blog_public', 2 );
+
+		$user_check = self::user_can_access();
+
+		$checks = is_admin() || $user_check || 2 !== (int) $blog_public || ( defined( 'WP_INSTALLING' ) && isset( $_GET['key'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
+
+		return ! $checks;
+	}
+
+
+	/**
+	 * Check if current user has access.
+	 *
+	 * Can be short-circuited using the `restricted_site_access_user_can_access` filter
+	 * to return a value other than null (boolean recommended).
+	 *
+	 * @return bool Whether the user has access
+	 */
+	protected static function user_can_access() {
+		/**
+		 * Filters whether the user can access the site before any other checks.
+		 *
+		 * Returning a non-null value will short-circuit the function
+		 * and return that value instead.
+		 *
+		 * @param null|bool $access Whether the user can access the site.
+		 */
+		$access = apply_filters( 'restricted_site_access_user_can_access', null );
+
+		if ( null !== $access ) {
+			return $access;
+		}
+
+		if ( is_multisite() ) {
+			$user_id = get_current_user_id();
+
+			if ( is_super_admin( $user_id ) ) {
+				return true;
+			}
+
+			if ( is_user_member_of_blog( $user_id ) && current_user_can( 'read' ) ) {
+				return true;
+			}
+		} elseif ( is_user_logged_in() ) {
+			return true;
+		}
+
+		return false;
+	}
+
+
+	/**
+	 * Inet_pton is not included in PHP < 5.3 on Windows (WP requires PHP 5.2).
+	 *
+	 * @param string $ip IP Address.
+	 *
+	 * @return array|string
+	 *
+	 * @codeCoverageIgnore
+	 */
+	public static function inet_pton( $ip ) {
+		if ( strpos( $ip, '.' ) !== false ) {
+			// ipv4.
+			$ip = pack( 'N', ip2long( $ip ) );
+		} elseif ( strpos( $ip, ':' ) !== false ) {
+			// ipv6.
+			$ip  = explode( ':', $ip );
+			$res = str_pad( '', ( 4 * ( 8 - count( $ip ) ) ), '0000', STR_PAD_LEFT );
+			foreach ( $ip as $seg ) {
+				$res .= str_pad( $seg, 4, '0', STR_PAD_LEFT );
+			}
+			$ip = pack( 'H' . strlen( $res ), $res );
+		}
+			return $ip;
 	}
 
 }

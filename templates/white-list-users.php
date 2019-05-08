@@ -21,6 +21,7 @@
 				</select>
 			</td>
 		</tr>
+		<?php if ( class_exists( 'SFWD_LMS' ) ) { ?>
 		<tr class="form-field">
 			<th scope="row" class="wpis-form-row">
 				<label for="ld-user-groups"><?php echo esc_html__( 'LearnDash User Groups', WPIS_LANG ); ?></label>
@@ -36,9 +37,10 @@
 				</select>
 			</td>
 		</tr>
+		<?php } ?>
         <tr class="form-field">
 			<th scope="row" class="wpis-form-row">
-				<label for="white-list-users"><?php echo esc_html__( 'Default Expiry Time', WPIS_LANG ); ?></label>
+				<label for="white-list-users"><?php echo esc_html__( 'Users', WPIS_LANG ); ?></label>
 			</th>
 			<td>
 				<?php

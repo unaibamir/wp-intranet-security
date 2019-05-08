@@ -11,7 +11,7 @@ class wpis_Sytem_Info {
 	/**
 	 *
 	 */
-	public function get_info( $space ) {
+	 public function get_info( $space ) {
 
 		global $wpdb;
 
@@ -19,7 +19,7 @@ class wpis_Sytem_Info {
 			'SITE_URL'                 => site_url(),
 			'HOME_URL'                 => home_url(),
 			'--',
-			'TLWP Version'             => WPIS_PLUGIN_VERSION,
+			'WP Intranet Security Version' => WPIS_PLUGIN_VERSION,
 			'WordPress Version'        => get_bloginfo( 'version' ),
 			'Permalink Structure'      => get_option( 'permalink_structure' ),
 			'--',

@@ -75,7 +75,7 @@
 
 <?php } elseif ( 'ip-restricts' === $active_tab && !$is_temporary_login) { ?>
     <div class="wrap list-wpis-logins" id="wpis-logins-settings">
-        <?php include WPIS_PLUGIN_DIR . '/templates/temporary-logins-settings.php'; ?>
+        <?php include WPIS_PLUGIN_DIR . '/templates/temporary-ip-restricts.php'; ?>
     </div>
 
 <?php } elseif ( 'white-list-users' === $active_tab && !$is_temporary_login) { ?>

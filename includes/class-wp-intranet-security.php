@@ -82,14 +82,12 @@ class Wp_Intranet_Security {
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'create_user' );
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'update_tlwp_settings' );
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'manage_temporary_login' );
-		//$this->loader->add_action( 'admin_notices', $plugin_admin, 'tlwp_ask_user_for_review' );
 		$this->loader->add_action( 'admin_notices', $plugin_admin, 'display_admin_notices' );
+		$this->loader->add_action( 'wp_ajax_rsa_ip_check', $plugin_admin, 'ajax_rsa_ip_check' );
+		$this->loader->add_action( 'blog_privacy_selector', $plugin_admin, 'blog_privacy_selector' );
+		$this->loader->add_action( 'parse_request', $plugin_admin, 'restrict_access' );
 
-		//$this->loader->add_action( 'wp_ajax_tlwp_rated', $plugin_admin, 'tlwp_rated' );
-		//$this->loader->add_action( 'wp_ajax_tlwp_reivew_header', $plugin_admin, 'tlwp_reivew_header' );
 
-		//$this->loader->add_filter( 'wpmu_welcome_notification', $plugin_admin, 'disable_welcome_notification', 10, 5 );
-		//$this->loader->add_filter( 'admin_footer_text', $plugin_admin, 'admin_footer_text', 1 );
 		$this->loader->add_filter( 'plugin_action_links', $plugin_admin, 'disable_plugin_deactivation', 10, 4 );
 		$this->loader->add_filter( 'plugin_action_links_' . WPIS_PLUGIN_BASE_NAME, $plugin_admin, 'plugin_add_settings_link', 10, 4 );
 	}

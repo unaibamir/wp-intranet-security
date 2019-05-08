@@ -1,7 +1,7 @@
 .wpis-form {
-	background-color: white;
+	/* background-color: white;
 	border: 1px solid;
-	padding: 10px;
+	padding: 10px; */
 }
 
 .new-wpis-form {
@@ -61,7 +61,7 @@
 }
 
 .wpis-form-row {
-	padding-left: 20px !important;
+	/* padding-left: 20px !important; */
 }
 
 .wpis-form-submit-button {
@@ -105,4 +105,9 @@
 #wpadminbar .temporay-access-mode-active > .ab-item {
 	color: #fff;
 	background-color: #ffba00;
+}
+
+
+.form-field input.code-field {
+    width: 200px;
 }

@@ -150,6 +150,7 @@ class Wp_Intranet_Security_Layout {
 				'page'    => 'wp-intranet-security',
 				'user_id' => $user_id,
 				'action'  => 'update',
+				'tab'  	  => 'home',
 			), admin_url( 'options-general.php' )
 		);
 		$disable_login_url    = Wp_Intranet_Security_Common::get_manage_login_url( $user_id, 'disable' );
