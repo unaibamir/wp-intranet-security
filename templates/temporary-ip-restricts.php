@@ -15,7 +15,26 @@
 				<label for="redirect"><?php echo esc_html__( 'Site Visibility', WPIS_LANG ); ?></label>
 			</th>
 			<td>
-				<a href="<?php echo admin_url( "options-reading.php" ); ?>"><?php echo esc_html__( 'Click here to change the website\'s visibility', WPIS_LANG ); ?></a>
+				<fieldset>
+					<legend class="screen-reader-text">
+						<span><?php echo esc_html__( 'Site Visibility', WPIS_LANG ); ?> </span>
+					</legend>
+					<input id="blog-public" type="radio" <?php checked( $blog_public, 1 ); ?> name="tlwp_settings_data[blog_public]" value="1">
+					<label for="blog-public"><?php echo esc_html__( 'Allow search engines to index this site', WPIS_LANG ); ?></label>
+					
+					<br>
+					
+					<input id="blog-norobots" type="radio" <?php checked( $blog_public, 0 ); ?> name="tlwp_settings_data[blog_public]" value="0">
+					<label for="blog-norobots"><?php echo esc_html__( 'Discourage search engines from indexing this site', WPIS_LANG ); ?></label>
+					<p class="description"><?php echo esc_html__( 'Note: Neither of these options blocks access to your site — it is up to search engines to honor your request', WPIS_LANG ); ?>.</p>
+
+					<p>
+						<input id="blog-restricted" type="radio" <?php checked( $blog_public, 2 ); ?> name="tlwp_settings_data[blog_public]" value="2">
+						<label for="blog-restricted">
+							<?php echo esc_html__( 'Restrict site access to visitors who are logged in or allowed by IP address', WPIS_LANG ); ?>
+						</label>
+					</p>
+				</fieldset>
 			</td>
 		</tr>
 		
@@ -64,8 +83,8 @@
 				</fieldset>
 			</td>
 		</tr>
-
-		<tr class="form-field">
+		
+		<!-- <tr class="form-field">
 			<th scope="row" class="wpis-form-row">
 				<label for="redirect_code"><?php echo esc_html__( 'Redirection status code', WPIS_LANG ); ?></label>
 			</th>
@@ -76,7 +95,7 @@
 					<option value="307" <?php  selected( $rsa_options["head_code"], 307, true ) ?>><?php esc_html_e( '307 Temporary', WPIS_LANG ); ?></option>
 				</select>
 			</td>
-		</tr>
+		</tr> -->
 
 		<tr class="form-field">
 			<th scope="row" class="wpis-form-row">
@@ -178,13 +197,14 @@
 			<td>
 				<p class="submit">
 					<input type="submit" class="button button-primary wpis-form-submit-button" value="<?php esc_html_e( 'Submit', WPIS_LANG ); ?>" class="button button-primary" id="generatetemporarylogin" name="generate_temporary_login">
+					<input type="hidden" name="tlwp_settings_data[rsa_options][head_code]" value="302">
+
+					<input type="hidden" name="tlwp_settings_data[white_list_user_grpups][]" value="<?php echo $white_list_user_grpups; ?>">
 				</p>
 			</td>
 		</tr>
 
-		<?php wp_nonce_field( 'wpis_generate_login_url', 'wpis-nonce', true, true ); ?>
-		
-		
+		<?php wp_nonce_field( 'wpis_generate_login_url', 'wpis-nonce', true, true ); ?>		
 		
 	</table>
 </form>

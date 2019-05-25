@@ -35,28 +35,16 @@
 				<input name="wpis_data[user_last_name]" type="text" id="user_last_name" value="" aria-required="true" maxlength="60" class="wpis-form-input"/>
 			</td>
 		</tr>
-
-		<?php if ( is_network_admin() ) { ?>
-			<tr class="form-field form-required">
-				<th scope="row" class="wpis-form-row">
-					<label for="user_super_admin"><?php echo esc_html__( 'Super Admin', WPIS_LANG ); ?> </label>
-				</th>
-				<td>
-					<input type="checkbox" id="user_super_admin" name="wpis_data[super_admin]"><?php echo esc_html__( 'Grant this user super admin privileges for the Network.', WPIS_LANG ); ?>
-				</td>
-			</tr>
-		<?php } else { ?>
-			<tr class="form-field">
-				<th scope="row" class="wpis-form-row">
-					<label for="adduser-role"><?php echo esc_html__( 'Role', WPIS_LANG ); ?></label>
-				</th>
-				<td>
-					<select name="wpis_data[role]" id="user-role">
-						<?php Wp_Intranet_Security_Common::tlwp_dropdown_roles( $visible_roles, $default_role ); ?>
-					</select>
-				</td>
-			</tr>
-		<?php } ?>
+		<tr class="form-field">
+			<th scope="row" class="wpis-form-row">
+				<label for="adduser-role"><?php echo esc_html__( 'Role', WPIS_LANG ); ?></label>
+			</th>
+			<td>
+				<select name="wpis_data[role]" id="user-role">
+					<?php Wp_Intranet_Security_Common::tlwp_dropdown_roles( $visible_roles, $default_role ); ?>
+				</select>
+			</td>
+		</tr>
 
 		<tr class="form-field">
 			<th scope="row" class="wpis-form-row">

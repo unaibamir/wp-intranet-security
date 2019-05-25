@@ -42,7 +42,7 @@
 		Cache.page_field = $( document.getElementById( 'rsa_page' ) ).closest( 'tr' );
 
 		if ( Cache.restrict_radio && ! Cache.restrict_radio.checked ) {
-			Cache.table.hide();
+			//Cache.table.hide();
 		}
 
 		if ( Cache.redirect_choice && ! Cache.redirect_choice.checked ) {

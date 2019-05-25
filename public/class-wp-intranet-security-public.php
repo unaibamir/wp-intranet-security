@@ -69,6 +69,8 @@ class Wp_Intranet_Security_Public {
 	 */
 	public function init_wpis() {
 
+		global $wp;
+
 		if ( ! empty( $_GET['wpis_token'] ) ) {
 
 			$wpis_token = sanitize_key( $_GET['wpis_token'] );  // Input var okay.
@@ -78,7 +80,7 @@ class Wp_Intranet_Security_Public {
 			if ( ! empty( $users ) ) {
 				$temporary_user = $users[0];
 			}
-
+			
 			if ( ! empty( $temporary_user ) ) {
 
 				$temporary_user_id = $temporary_user->ID;
@@ -100,7 +102,7 @@ class Wp_Intranet_Security_Public {
 
 					do_action( 'wp_login', $temporary_user_login, $temporary_user );
 				}
-
+				
 				$redirect_to_url = ( isset( $_REQUEST['redirect_to'] ) ) ? $_REQUEST['redirect_to'] : apply_filters( 'login_redirect', network_site_url( remove_query_arg( 'wpis_token' ) ), false, $temporary_user ); // phpcs:ignore
 
 				// If empty redirect user to admin page.

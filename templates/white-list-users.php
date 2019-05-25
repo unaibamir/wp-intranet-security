@@ -16,7 +16,7 @@
 
 			</th>
 			<td>
-				<select multiple name="tlwp_settings_data[white_list_user_grpups][]" id="user-roles" class="white-list-roles-dropdown select2-dropdown">
+				<select multiple name="white_list_settings[user_roles][]" id="user-roles" class="white-list-roles-dropdown select2-dropdown">
 					<?php Wp_Intranet_Security_Common::tlwp_multi_select_dropdown_roles( $white_list_user_grpups ); ?>
 				</select>
 			</td>
@@ -27,7 +27,7 @@
 				<label for="ld-user-groups"><?php echo esc_html__( 'LearnDash User Groups', WPIS_LANG ); ?></label>
 			</th>
 			<td>
-				<select multiple name="tlwp_settings_data[white_list_ld_user_groups][]" id="ld-user-groups" class="default-role-dropdown select2-dropdown">
+				<select multiple name="white_list_settings[ld_user_groups][]" id="ld-user-groups" class="default-role-dropdown select2-dropdown">
 					<?php
 					foreach ( learndash_get_groups() as $key => $group ) {
 						$selected = in_array($group->ID, $white_list_ld_user_groups) ? 'selected="selected"' : '';
@@ -46,7 +46,7 @@
 				<?php
 				$users = get_users( array( 'fields' => array( 'ID', 'display_name' ) ) );
 				?>
-                <select multiple name="tlwp_settings_data[white_list_users][]" id="white-list-users" class="select2-dropdown">
+                <select multiple name="white_list_settings[users][]" id="white-list-users" class="select2-dropdown">
 					<?php
 					foreach ( $users as $key => $user ) {
 						$selected = in_array($user->ID, $white_list_users) ? 'selected="selected"' : '';

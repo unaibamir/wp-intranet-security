@@ -34,6 +34,14 @@ class Wp_Intranet_Security_Admin {
 	 */
 	private static $rsa_options;
 
+
+	/**
+	 * Plugin options.
+	 *
+	 * @var array $rsa_options The plugin options.
+	 */
+	private $temp_options;
+
 	/**
 	 * Initialize Admin Class
 	 *
@@ -44,8 +52,9 @@ class Wp_Intranet_Security_Admin {
 	 */
 	public function __construct( $plugin_name, $version ) {
 
-		$this->plugin_name = $plugin_name;
-		$this->version     = $version;
+		$this->plugin_name 		= $plugin_name;
+		$this->version     		= $version;
+		$this->temp_options 	= maybe_unserialize( get_option( 'tlwp_settings', array() ) );
 	}
 
 	/**
@@ -124,7 +133,7 @@ class Wp_Intranet_Security_Admin {
 	 */
 	public function admin_menu() {
 		add_options_page(
-			__( 'WP Intranet Security', WPIS_LANG ), __( 'WP Intranet Security', WPIS_LANG ), apply_filters( 'tempadmin_user_cap', 'manage_options' ), 'wp-intranet-security', array(
+			__( 'WP Intranet Security', WPIS_LANG ), __( 'WP Intranet Security', WPIS_LANG ), apply_filters( 'wpis_tempadmin_user_cap', 'manage_options' ), 'wp-intranet-security', array(
 				__class__,
 				'admin_settings',
 			)
@@ -166,16 +175,20 @@ class Wp_Intranet_Security_Admin {
 				$mailto_link = Wp_Intranet_Security_Common::generate_mailto_link( $user_email, $wpis_generated_url );
 			}
 
-			$default_role        		= ( ! empty( $tlwp_settings ) && isset( $tlwp_settings['default_role'] ) ) ? $tlwp_settings['default_role'] : 'administrator';
-			$default_expiry_time 		= ( ! empty( $tlwp_settings ) && isset( $tlwp_settings['default_expiry_time'] ) ) ? $tlwp_settings['default_expiry_time'] : 'week';
-			$visible_roles       		= ( ! empty( $tlwp_settings ) && isset( $tlwp_settings['visible_roles'] ) ) ? $tlwp_settings['visible_roles'] : array();
-			$white_list_user_grpups 	= ( ! empty( $tlwp_settings ) && isset( $tlwp_settings['white_list_user_grpups'] ) ) ? $tlwp_settings['white_list_user_grpups'] : array();
-			$white_list_ld_user_groups  = ( ! empty( $tlwp_settings ) && isset( $tlwp_settings['white_list_ld_user_groups'] ) ) ? $tlwp_settings['white_list_ld_user_groups'] : array();
-			$white_list_users  			= ( ! empty( $tlwp_settings ) && isset( $tlwp_settings['white_list_users'] ) ) ? $tlwp_settings['white_list_users'] : array();
-			$rsa_options  				= ( ! empty( $tlwp_settings ) && isset( $tlwp_settings['rsa_options'] ) ) ? $tlwp_settings['rsa_options'] : array();
+			$default_role        		= isset( $tlwp_settings['default_role'] ) ? $tlwp_settings['default_role'] : 'administrator';
+			$default_expiry_time 		= isset( $tlwp_settings['default_expiry_time'] ) ? $tlwp_settings['default_expiry_time'] : 'week';
+			$visible_roles       		= isset( $tlwp_settings['visible_roles'] ) ? $tlwp_settings['visible_roles'] : array();
+			$rsa_options  				= isset( $tlwp_settings['rsa_options'] ) ? $tlwp_settings['rsa_options'] : array();
 
 			$client_ip_address 			= self::get_client_ip_address();
 			$config_ips 				= self::get_config_ips();
+			$blog_public 				= get_option( 'blog_public' );
+
+
+			$white_list_settings       	= get_option( 'white_list_settings', array() );
+			$white_list_user_grpups 	= ( isset( $white_list_settings['user_roles'] ) ) ? $white_list_settings['user_roles'] : array();
+			$white_list_ld_user_groups  = ( isset( $white_list_settings['ld_user_groups'] ) ) ? $white_list_settings['ld_user_groups'] : array();
+			$white_list_users  			= ( isset( $white_list_settings['users'] ) ) ? $white_list_settings['users'] : array();
 		}
 
 		include $_template_file;
@@ -220,14 +233,15 @@ class Wp_Intranet_Security_Admin {
 			$user = Wp_Intranet_Security_Common::create_new_user( $data );
 			if ( isset( $user['error'] ) && $user['error'] === true ) {
 				$result = array(
-					'status'  => 'error',
-					'message' => 'user_creation_failed',
+					'status'  	=> 'error',
+					'message' 	=> 'user_creation_failed',
+					'tab'  		=> 'home',
 				);
 			} else {
 				$result = array(
-					'status'  => 'success',
-					'tab'  => 'home',
-					'message' => 'user_created',
+					'status'  	=> 'success',
+					'tab'  		=> 'home',
+					'message' 	=> 'user_created',
 				);
 
 				$user_id       = isset( $user['user_id'] ) ? $user['user_id'] : 0;
@@ -262,26 +276,26 @@ class Wp_Intranet_Security_Admin {
 
 		$rsa_options 		= !empty( $_POST["tlwp_settings_data"]["rsa_options"] ) ? self::sanitize_options( $_POST["tlwp_settings_data"]["rsa_options"] ) : $tlwp_settings["rsa_options"];
 
-		$white_list_user_grpups = !empty( $_POST["tlwp_settings_data"]["white_list_user_grpups"] ) ? $_POST["tlwp_settings_data"]["white_list_user_grpups"] : $tlwp_settings["white_list_user_grpups"];
-		$white_list_users		 = !empty( $_POST["tlwp_settings_data"]["white_list_users"] ) ? $_POST["tlwp_settings_data"]["white_list_users"] : $tlwp_settings["white_list_users"];
+		/*$white_list_user_grpups 	= $_POST["tlwp_settings_data"]["white_list_user_grpups"];
+		$white_list_users		 	= $_POST["tlwp_settings_data"]["white_list_users"];*/
 
-		$_POST["tlwp_settings_data"]["rsa_options"]  = $rsa_options;
-		$_POST['tlwp_settings_data']["white_list_user_grpups"]  = $white_list_user_grpups;
-		$_POST['tlwp_settings_data']["white_list_users"]  = $white_list_users;
+		$_POST["tlwp_settings_data"]["rsa_options"]  			= $rsa_options;
+		/*$_POST['tlwp_settings_data']["white_list_user_grpups"]  = $white_list_user_grpups;
+		$_POST['tlwp_settings_data']["white_list_users"]  		= $white_list_users;
 
 		if ( class_exists( 'SFWD_LMS' ) ) {
-			$white_list_ld_user_groups = !empty( $_POST["tlwp_settings_data"]["white_list_ld_user_groups"] ) ? $_POST["tlwp_settings_data"]["white_list_ld_user_groups"] : $tlwp_settings["white_list_ld_user_groups"];
+			$white_list_ld_user_groups = $_POST["tlwp_settings_data"]["white_list_ld_user_groups"];
 			$_POST['tlwp_settings_data']["white_list_ld_user_groups"]  = $white_list_ld_user_groups;
-		}
+		}*/
 
 		$data 						= $_POST['tlwp_settings_data'];
 
 		$default_role        		= isset( $data['default_role'] ) ? $data['default_role'] : 'administrator';
 		$default_expiry_time 		= isset( $data['default_expiry_time'] ) ? $data['default_expiry_time'] : 'week';
 		$visible_roles       		= isset( $data['visible_roles'] ) ? $data['visible_roles'] : array();
-		$white_list_user_grpups    	= isset( $data['white_list_user_grpups'] ) ? $data['white_list_user_grpups'] : array();
+		/*$white_list_user_grpups    	= isset( $data['white_list_user_grpups'] ) ? $data['white_list_user_grpups'] : array();
 		$white_list_ld_user_groups	= isset( $data['white_list_ld_user_groups'] ) ? $data['white_list_ld_user_groups'] : array();
-		$white_list_users			= isset( $data['white_list_users'] ) ? $data['white_list_users'] : array();
+		$white_list_users			= isset( $data['white_list_users'] ) ? $data['white_list_users'] : array();*/
 		$ip_restricted       		= isset( $data['ip_restricted'] ) ? $data['ip_restricted'] : array();
 		$rsa_options       			= isset( $data["rsa_options"] ) ? $data["rsa_options"] : array();
 
@@ -294,13 +308,14 @@ class Wp_Intranet_Security_Admin {
 			'default_role'        		=> $default_role,
 			'default_expiry_time' 		=> $default_expiry_time,
 			'visible_roles'       		=> $visible_roles,
-			'white_list_user_grpups'    => $white_list_user_grpups,
+			/*'white_list_user_grpups'    => $white_list_user_grpups,
 			'white_list_ld_user_groups' => $white_list_ld_user_groups,
-			'white_list_users' 			=> $white_list_users,
+			'white_list_users' 			=> $white_list_users,*/
 			'rsa_options'		  		=> $rsa_options
 		);
 
 		update_option( 'tlwp_settings', "");
+		update_option( 'blog_public', $_POST["tlwp_settings_data"]["blog_public"]);
 
 		$update = update_option( 'tlwp_settings', maybe_serialize( $tlwp_settings ), true );
 
@@ -317,6 +332,32 @@ class Wp_Intranet_Security_Admin {
 
 		wp_redirect( $redirect_link, 302 );
 		exit();
+	}
+
+
+	public function update_white_list_settings() {
+
+		if ( empty( $_POST['white_list_settings'] ) || empty( $_POST['wpis-nonce'] ) ) {
+			return;
+		}
+
+		update_option( 'white_list_settings', ''); // save way
+		$update = update_option( 'white_list_settings', $_POST['white_list_settings'], true );
+
+		$result = array();
+		if ( $update ) {
+			$result = array(
+				'status'  => 'success',
+				'message' => 'settings_updated',
+				'tab'     => isset( $_REQUEST["tab"] ) ? $_REQUEST["tab"] : 'home',
+			);
+		}
+
+		$redirect_link = Wp_Intranet_Security_Common::get_redirect_link( $result );
+
+		wp_redirect( $redirect_link, 302 );
+		exit();
+
 	}
 
 	/**
@@ -360,14 +401,16 @@ class Wp_Intranet_Security_Admin {
 
 		if ( ! $is_valid_temporary_user ) {
 			$result = array(
-				'status'  => 'error',
-				'message' => 'is_not_temporary_login',
+				'status'  	=> 'error',
+				'message' 	=> 'is_not_temporary_login',
+				'tab'  		=> 'home',
 			);
 			$error  = true;
 		} elseif ( ! wp_verify_nonce( $nonce, 'manage-temporary-login_' . $user_id ) ) {
 			$result = array(
-				'status'  => 'error',
-				'message' => 'nonce_failed',
+				'status'  	=> 'error',
+				'message' 	=> 'nonce_failed',
+				'tab'  		=> 'home',
 			);
 			$error  = true;
 		}
@@ -377,13 +420,15 @@ class Wp_Intranet_Security_Admin {
 				$disable_login = Wp_Intranet_Security_Common::manage_login( absint( $user_id ), 'disable' );
 				if ( $disable_login ) {
 					$result = array(
-						'status'  => 'success',
-						'message' => 'login_disabled',
+						'status'  	=> 'success',
+						'message' 	=> 'login_disabled',
+						'tab'  		=> 'home',
 					);
 				} else {
 					$result = array(
-						'status'  => 'error',
-						'message' => 'default_error_message',
+						'status'  	=> 'error',
+						'message' 	=> 'default_error_message',
+						'tab'  		=> 'home',
 					);
 				}
 			} elseif ( 'enable' === $action ) {
@@ -393,11 +438,13 @@ class Wp_Intranet_Security_Admin {
 					$result = array(
 						'status'  => 'success',
 						'message' => 'login_enabled',
+						'tab'  		=> 'home',
 					);
 				} else {
 					$result = array(
 						'status'  => 'error',
 						'message' => 'default_error_message',
+						'tab'  		=> 'home',
 					);
 				}
 			} elseif ( 'delete' === $action ) {
@@ -418,11 +465,13 @@ class Wp_Intranet_Security_Admin {
 					$result = array(
 						'status'  => 'success',
 						'message' => 'user_deleted',
+						'tab'  		=> 'home',
 					);
 				} else {
 					$result = array(
 						'status'  => 'error',
 						'message' => 'default_error_message',
+						'tab'  		=> 'home',
 					);
 				}
 			} elseif ( 'update' === $action ) {
@@ -443,12 +492,14 @@ class Wp_Intranet_Security_Admin {
 					$result = array(
 						'status'  => 'error',
 						'message' => 'default_error_message',
+						'tab'  		=> 'home',
 					);
 				}
 			} else {
 				$result = array(
 					'status'  => 'error',
 					'message' => 'invalid_action',
+					'tab'  		=> 'home',
 				);
 			}// End if().
 		}// End if().
@@ -745,7 +796,7 @@ class Wp_Intranet_Security_Admin {
 	public static function blog_privacy_selector() {
 		global $wp;
 		$is_restricted = ( 2 === (int) get_option( 'blog_public' ) );
-		$is_restricted = apply_filters( 'restricted_site_access_is_restricted', $is_restricted, $wp );
+		$is_restricted = apply_filters( 'wpis_restricted_site_access_is_restricted', $is_restricted, $wp );
 		?>
 		<p>
 			<input id="blog-restricted" type="radio" name="blog_public" value="2" <?php checked( $is_restricted ); ?> />
@@ -789,12 +840,13 @@ class Wp_Intranet_Security_Admin {
 	 */
 	public static function restrict_access_check( $wp ) {
 
-		$tlwp_settings     = maybe_unserialize( get_option( 'tlwp_settings', array() ) );
-		self::$rsa_options = $tlwp_settings["rsa_options"];
-		$is_restricted     = self::is_restricted();
+		$can_access 		= false;
+		$tlwp_settings     	= maybe_unserialize( get_option( 'tlwp_settings', array() ) );
+		self::$rsa_options 	= $tlwp_settings["rsa_options"];
+		$is_restricted     	= self::is_restricted();
 
 		// Check to see if it's _not_ restricted.
-		if ( apply_filters( 'restricted_site_access_is_restricted', $is_restricted, $wp ) === false ) {
+		if ( apply_filters( 'wpis_restricted_site_access_is_restricted', $is_restricted, $wp ) === false ) {
 			return;
 		}
 
@@ -823,15 +875,25 @@ class Wp_Intranet_Security_Admin {
 					 * @param string $remote_ip The remote IP address being checked.
 					 * @param string $line      The matched masked IP address.
 					 */
-					do_action( 'restrict_site_access_ip_match', $remote_ip, $line );
-					return;
+					do_action( 'wpis_restrict_site_access_ip_match', $remote_ip, $line );
+					$can_access = true;
 				}
 			}
 		}
 
-		$rsa_restrict_approach = apply_filters( 'restricted_site_access_approach', self::$rsa_options['approach'] );
-		do_action( 'restrict_site_access_handling', $rsa_restrict_approach, $wp ); // allow users to hook handling.
+		if( $is_restricted ) {
+			$can_access 	= false;
+		}
 
+		if( $can_access ) {
+			return;
+		}
+
+
+
+		$rsa_restrict_approach = apply_filters( 'wpis_restricted_site_access_approach', self::$rsa_options['approach'] );
+		do_action( 'wpis_restrict_site_access_handling', $rsa_restrict_approach, $wp ); // allow users to hook handling.
+		
 		switch ( $rsa_restrict_approach ) {
 			case 4: // Show them a page.
 				if ( ! empty( self::$rsa_options['page'] ) ) {
@@ -866,14 +928,13 @@ class Wp_Intranet_Security_Admin {
 				// Fall thru to case 3 if case 2 not handled.
 			case 3:
 				$message  = esc_html( self::$rsa_options['message'] );
-				$message  = apply_filters( 'restricted_site_access_message', $message, $wp );
+				$message  = apply_filters( 'wpis_restricted_site_access_message', $message, $wp );
 
 				return array(
 					'die_message' => $message,
 					'die_title'   => esc_html( get_bloginfo( 'name' ) ) . ' - Site Access Restricted',
 					'die_code'    => 403,
 				);
-
 			case 2:
 				if ( ! empty( self::$rsa_options['redirect_url'] ) ) {
 					if ( ! empty( self::$rsa_options['redirect_path'] ) ) {
@@ -888,8 +949,8 @@ class Wp_Intranet_Security_Admin {
 				self::$rsa_options['redirect_url'] = wp_login_url( $current_path );
 		}
 
-		$redirect_url  = apply_filters( 'restricted_site_access_redirect_url', self::$rsa_options['redirect_url'], $wp );
-		$redirect_code = apply_filters( 'restricted_site_access_head', self::$rsa_options['head_code'], $wp );
+		$redirect_url  = apply_filters( 'wpis_restricted_site_access_redirect_url', self::$rsa_options['redirect_url'], $wp );
+		$redirect_code = apply_filters( 'wpis_restricted_site_access_head', self::$rsa_options['head_code'], $wp );
 
 		return array(
 			'url'  => $redirect_url,
@@ -907,7 +968,7 @@ class Wp_Intranet_Security_Admin {
 
 		$user_check = self::user_can_access();
 
-		$checks = is_admin() || $user_check || 2 !== (int) $blog_public || ( defined( 'WP_INSTALLING' ) && isset( $_GET['key'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
+		$checks = is_admin() || $user_check || 2 !== (int) $blog_public || ( defined( 'WP_INSTALLING' ) && isset( $_GET['key'] ) );
 
 		return ! $checks;
 	}
@@ -922,6 +983,7 @@ class Wp_Intranet_Security_Admin {
 	 * @return bool Whether the user has access
 	 */
 	protected static function user_can_access() {
+
 		/**
 		 * Filters whether the user can access the site before any other checks.
 		 *
@@ -930,27 +992,40 @@ class Wp_Intranet_Security_Admin {
 		 *
 		 * @param null|bool $access Whether the user can access the site.
 		 */
-		$access = apply_filters( 'restricted_site_access_user_can_access', null );
+		$access = apply_filters( 'wpis_restricted_site_access_user_can_access', null );
 
 		if ( null !== $access ) {
 			return $access;
 		}
 
-		if ( is_multisite() ) {
-			$user_id = get_current_user_id();
-
-			if ( is_super_admin( $user_id ) ) {
-				return true;
-			}
-
-			if ( is_user_member_of_blog( $user_id ) && current_user_can( 'read' ) ) {
-				return true;
-			}
-		} elseif ( is_user_logged_in() ) {
-			return true;
+		if ( !is_user_logged_in() ) {
+			return;
 		}
 
-		return false;
+		$can_access 			= false;
+		$user 					= wp_get_current_user();
+		$user_id 				= $user->ID;
+		$user_role 				= $user->roles;
+		$group_ids 				= learndash_get_users_group_ids( $user_id );
+		$white_list_settings 	= get_option( 'white_list_settings', array() );
+		
+		if ( is_user_logged_in() && self::is_not_temp_admin() ) {
+			$can_access = true;
+		} elseif( isset($white_list_settings["users"]) ) {
+			if( !empty($white_list_settings["users"]) && in_array($user_id, $white_list_settings["users"]) ) {
+				$can_access = true;
+			}
+			else if( !empty($white_list_settings["user_roles"]) && !empty( array_intersect($white_list_settings["user_roles"], $user_role) ) ) {
+				$can_access = true;
+			}
+			else if( !empty($white_list_settings["ld_user_groups"]) && !empty( array_intersect($white_list_settings["ld_user_groups"], $group_ids) ) ) {
+				$can_access = true;
+			}
+		} else {
+			$can_access = false;
+		}
+
+		return apply_filters( "wpis_user_can_access", $can_access, $user );
 	}
 
 
@@ -976,7 +1051,42 @@ class Wp_Intranet_Security_Admin {
 			}
 			$ip = pack( 'H' . strlen( $res ), $res );
 		}
-			return $ip;
+		return $ip;
+	}
+
+
+	/**
+	 * Check if a given ip is in a network.
+	 * Source: https://gist.github.com/tott/7684443
+	 *
+	 * @param  string $ip    IP to check in IPV4 format eg. 127.0.0.1.
+	 * @param  string $range IP/CIDR netmask eg. 127.0.0.0/24, also 127.0.0.1 is accepted and /32 assumed.
+	 * @return boolean true if the ip is in this range / false if not.
+	 */
+	public static function ip_in_range( $ip, $range ) {
+		if ( strpos( $range, '/' ) === false ) {
+			$range .= '/32';
+		}
+		// $range is in IP/CIDR format eg 127.0.0.1/24
+		list( $range, $netmask ) = explode( '/', $range, 2 );
+		$range_decimal           = ip2long( $range );
+		$ip_decimal              = ip2long( $ip );
+		$wildcard_decimal        = pow( 2, ( 32 - $netmask ) ) - 1;
+		$netmask_decimal         = ~ $wildcard_decimal;
+		return ( ( $ip_decimal & $netmask_decimal ) === ( $range_decimal & $netmask_decimal ) );
+	}
+
+
+	public static function is_not_temp_admin() {
+
+		$current_user = wp_get_current_user();
+		$temp_login = get_user_meta( $current_user->ID, "_wpis_user", true );
+
+		if( $current_user->exists() && user_can($current_user, "manage_options") && empty( $temp_login ) ) {
+			return true;
+		}
+
+		return false;
 	}
 
 }

@@ -14,6 +14,7 @@
         <!-- <a href="<?php echo esc_url( admin_url( 'options-general.php?page=wp-intranet-security&tab=settings' ) ); ?>" class="nav-tab <?php echo 'settings' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php echo esc_html__( 'Settings', WPIS_LANG ); ?></a> -->
 	<?php } ?>
     <a href="<?php echo esc_url( admin_url( 'options-general.php?page=wp-intranet-security&tab=system-info' ) ); ?>" class="nav-tab <?php echo 'system-info' === $active_tab ? 'nav-tab-active' : ''; ?>"><?php echo esc_html__( 'System Info', WPIS_LANG ); ?></a>
+
 </h2>
 
 <?php if ( 'home' === $active_tab && !$is_temporary_login ) { ?>

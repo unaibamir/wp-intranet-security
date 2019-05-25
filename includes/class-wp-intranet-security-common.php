@@ -81,10 +81,6 @@ class Wp_Intranet_Security_Common {
 
 		} else {
 
-			if ( is_multisite() && ! empty( $data['super_admin'] ) && 'on' === $data['super_admin'] ) {
-				grant_super_admin( $user_id );
-			}
-
 			update_user_meta( $user_id, '_wpis_user', true );
 			update_user_meta( $user_id, '_wpis_created', Wp_Intranet_Security_Common::get_current_gmt_timestamp() );
 			update_user_meta( $user_id, '_wpis_expire', Wp_Intranet_Security_Common::get_user_expire_time( $expiry_option, $date ) );
@@ -139,11 +135,6 @@ class Wp_Intranet_Security_Common {
 			);
 		}
 
-
-		if ( is_multisite() && ! empty( $data['super_admin'] ) && 'on' === $data['super_admin'] ) {
-			grant_super_admin( $user_id );
-		}
-
 		update_user_meta( $user_id, '_wpis_updated', Wp_Intranet_Security_Common::get_current_gmt_timestamp() );
 		update_user_meta( $user_id, '_wpis_expire', Wp_Intranet_Security_Common::get_user_expire_time( $expiry_option, $date ) );
 
@@ -176,7 +167,7 @@ class Wp_Intranet_Security_Common {
 		);
 
 		// Now, one can add their own options.
-		$expiry_options = apply_filters( 'tlwp_expiry_options', $expiry_options );
+		$expiry_options = apply_filters( 'wpis_expiry_options', $expiry_options );
 
 		// Get Order options to sort $expiry_options array by it's array
 		foreach ( $expiry_options as $key => $options ) {
@@ -598,7 +589,7 @@ class Wp_Intranet_Security_Common {
 			return '';
 		}
 
-		$login_url = add_query_arg( 'wpis_token', $wpis_token, trailingslashit( admin_url() ) );
+		$login_url = add_query_arg( array( 'wpis_token' => $wpis_token, "redirect_to" => home_url("/") ), trailingslashit( admin_url() ) );
 
 		return $login_url;
 
