@@ -87,12 +87,12 @@ class Wp_Intranet_Security {
 		$this->loader->add_action( 'wp_ajax_rsa_ip_check', $plugin_admin, 'ajax_rsa_ip_check' );
 		$this->loader->add_action( 'blog_privacy_selector', $plugin_admin, 'blog_privacy_selector' );
 		$this->loader->add_action( 'parse_request', $plugin_admin, 'restrict_access' );
-		//$this->loader->add_action( 'show_user_profile', $plugin_user, 'extra_user_profile_fields', 9 );
+		/*$this->loader->add_action( 'show_user_profile', $plugin_user, 'extra_user_profile_fields', 9 );
 		$this->loader->add_action( 'edit_user_profile', $plugin_user, 'extra_user_profile_fields', 9 );
-		//$this->loader->add_action( 'personal_options_update', $plugin_user, 'save_module_user_profile_fields', 9 );
+		$this->loader->add_action( 'personal_options_update', $plugin_user, 'save_module_user_profile_fields', 9 );
 		$this->loader->add_action( 'edit_user_profile_update', $plugin_user, 'save_module_user_profile_fields', 9 );
 		$this->loader->add_action( 'manage_users_columns', $plugin_user, 'wpis_user_list_columns', 10 );
-		$this->loader->add_action( 'manage_users_custom_column', $plugin_user, 'wpis_list_column_content', 10, 3 );
+		$this->loader->add_action( 'manage_users_custom_column', $plugin_user, 'wpis_list_column_content', 10, 3 );*/
 
 		$this->loader->add_filter( 'plugin_action_links', $plugin_admin, 'disable_plugin_deactivation', 10, 4 );
 		$this->loader->add_filter( 'plugin_action_links_' . WPIS_PLUGIN_BASE_NAME, $plugin_admin, 'plugin_add_settings_link', 10, 4 );
