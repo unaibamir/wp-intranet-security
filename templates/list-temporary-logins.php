@@ -13,12 +13,12 @@
 
 	<tbody>
 	<?php
-	$users = Wp_Intranet_Security_Common::get_temporary_logins();
+	$temp_users = Wp_Intranet_Security_Common::get_temporary_logins();
+	
+	if ( is_array( $temp_users ) && count( $temp_users ) > 0 ) {
 
-	if ( is_array( $users ) && count( $users ) > 0 ) {
-
-		foreach ( $users as $user ) {
-			echo Wp_Intranet_Security_Layout::prepare_single_user_row( $user );
+		foreach ( $temp_users as $temp_user ) {
+			echo Wp_Intranet_Security_Layout::prepare_single_user_row( $temp_user );
 		}
 	} else {
 		echo Wp_Intranet_Security_Layout::prepare_empty_user_row();

@@ -212,44 +212,90 @@ class Wp_Intranet_Security_Admin {
 		$error  = true;
 		$result = array(
 			'status' => 'error',
+			'tab'  	 => 'home',
 		);
 
 		$redirect_link = '';
-		if ( false == Wp_Intranet_Security_Common::can_manage_wpis() ) {
-			$result['message'] = 'unathorised_access';
-		} elseif ( ! wp_verify_nonce( $_POST['wpis-nonce'], 'wpis_generate_login_url' ) ) {
-			$result['message'] = 'nonce_failed';
-		} elseif ( empty( $data['user_email'] ) ) {
-			$result['message'] = 'empty_email';
-		} elseif ( ! is_email( $email ) ) {
-			$result['message'] = 'not_valid_email';
-		} elseif ( ! empty( $data['user_email'] ) && email_exists( $data['user_email'] ) ) {
-			$result['message'] = 'email_is_in_use';
-		} else {
-			$error = false;
+
+		if( !empty($data["user_type"]) && $data["user_type"] == "new_user" ) {
+			if ( false == Wp_Intranet_Security_Common::can_manage_wpis() ) {
+				$result['message'] = 'unathorised_access';
+			} elseif ( ! wp_verify_nonce( $_POST['wpis-nonce'], 'wpis_generate_login_url' ) ) {
+				$result['message'] = 'nonce_failed';
+			} elseif ( empty( $data['user_email'] ) ) {
+				$result['message'] = 'empty_email';
+			} elseif ( ! is_email( $email ) ) {
+				$result['message'] = 'not_valid_email';
+			} elseif ( ! empty( $data['user_email'] ) && email_exists( $data['user_email'] ) ) {
+				$result['message'] = 'email_is_in_use';
+			} else {
+				$error = false;
+			}
+
+			if ( ! $error ) {
+				$user = Wp_Intranet_Security_Common::create_new_user( $data );
+				if ( isset( $user['error'] ) && $user['error'] === true ) {
+					$result = array(
+						'status'  	=> 'error',
+						'message' 	=> 'user_creation_failed',
+						'tab'  		=> 'home',
+					);
+				} else {
+					$result = array(
+						'tab'  		=> 'home',
+						'status'  	=> 'success',
+						'message' 	=> 'user_created',
+					);
+
+					$user_id       = isset( $user['user_id'] ) ? $user['user_id'] : 0;
+					$redirect_link = Wp_Intranet_Security_Common::get_redirect_link( $result );
+					$redirect_link = add_query_arg( 'wpis_generated_url', Wp_Intranet_Security_Common::get_login_url( $user_id ), $redirect_link );
+					$redirect_link = add_query_arg( 'user_email', $email, $redirect_link );
+				}
+			}
 		}
 
-		if ( ! $error ) {
-			$user = Wp_Intranet_Security_Common::create_new_user( $data );
-			if ( isset( $user['error'] ) && $user['error'] === true ) {
-				$result = array(
-					'status'  	=> 'error',
-					'message' 	=> 'user_creation_failed',
-					'tab'  		=> 'home',
-				);
+		if( !empty($data["user_type"]) && $data["user_type"] == "existing_user" ) {
+			
+			if ( false == Wp_Intranet_Security_Common::can_manage_wpis() ) {
+				$result['message'] = 'unathorised_access';
+			} elseif ( ! wp_verify_nonce( $_POST['wpis-nonce'], 'wpis_generate_login_url' ) ) {
+				$result['message'] = 'nonce_failed';
+			} elseif ( empty( $data['existing_user_id'] ) ) {
+				$result['message'] = 'no_user_selected';
+			} elseif ( empty( $data['existing_user_expiry'] ) ) {
+				$result['message'] = 'no_existing_expiry';
 			} else {
+				$error = false;
+			}
+
+			if ( ! $error ) {
+
+				$expiry_option 	= ! empty( $_POST['wpis_data']['existing_user_expiry'] ) ? $_POST['wpis_data']['existing_user_expiry'] : 'day';
+				$date          	= ! empty( $_POST['wpis_data']['existing_custom_date'] ) ? $_POST['wpis_data']['existing_custom_date'] : '';
+
+				$user_id 	 	= $data['existing_user_id'];
+
+				update_user_meta( $user_id, '_wpis_user', true );
+				update_user_meta( $user_id, '_wpis_created', Wp_Intranet_Security_Common::get_current_gmt_timestamp() );
+				update_user_meta( $user_id, '_wpis_expire', Wp_Intranet_Security_Common::get_user_expire_time( $expiry_option, $date ) );
+				update_user_meta( $user_id, '_wpis_token', Wp_Intranet_Security_Common::generate_wpis_token( $user_id ) );
+
+				update_user_meta( $user_id, 'show_welcome_panel', 0 );
+
 				$result = array(
-					'status'  	=> 'success',
 					'tab'  		=> 'home',
+					'status'  	=> 'success',
 					'message' 	=> 'user_created',
 				);
 
-				$user_id       = isset( $user['user_id'] ) ? $user['user_id'] : 0;
 				$redirect_link = Wp_Intranet_Security_Common::get_redirect_link( $result );
 				$redirect_link = add_query_arg( 'wpis_generated_url', Wp_Intranet_Security_Common::get_login_url( $user_id ), $redirect_link );
 				$redirect_link = add_query_arg( 'user_email', $email, $redirect_link );
+
 			}
 		}
+
 
 		if ( empty( $redirect_link ) ) {
 			$redirect_link = Wp_Intranet_Security_Common::get_redirect_link( $result );
@@ -337,12 +383,14 @@ class Wp_Intranet_Security_Admin {
 
 	public function update_white_list_settings() {
 
-		if ( empty( $_POST['white_list_settings'] ) || empty( $_POST['wpis-nonce'] ) ) {
+		if ( empty( $_POST['wpis-nonce-white'] ) ) {
 			return;
 		}
 
+		$data = !empty( $_POST['white_list_settings'] ) ? $_POST['white_list_settings'] : array();
+		
 		update_option( 'white_list_settings', ''); // save way
-		$update = update_option( 'white_list_settings', $_POST['white_list_settings'], true );
+		$update = update_option( 'white_list_settings', $data );
 
 		$result = array();
 		if ( $update ) {
@@ -537,6 +585,8 @@ class Wp_Intranet_Security_Admin {
 			'login_enabled'           => __( 'Login enabled successfully!', WPIS_LANG ),
 			'settings_updated'        => __( 'Settings have been updated successfully', WPIS_LANG ),
 			'default_success_message' => __( 'Success!', WPIS_LANG ),
+			'no_user_selected'        => __( 'Please select user.', WPIS_LANG ),
+			'no_existing_expiry'      => __( 'Please select user expiry time.', WPIS_LANG ),
 		);
 
 		$class   = $message = '';
@@ -1006,12 +1056,12 @@ class Wp_Intranet_Security_Admin {
 		$user 					= wp_get_current_user();
 		$user_id 				= $user->ID;
 		$user_role 				= $user->roles;
-		$group_ids 				= learndash_get_users_group_ids( $user_id );
+		$group_ids 				= class_exists( 'SFWD_LMS' ) ? learndash_get_users_group_ids( $user_id ) : array() ;
 		$white_list_settings 	= get_option( 'white_list_settings', array() );
 		
 		if ( is_user_logged_in() && self::is_not_temp_admin() ) {
 			$can_access = true;
-		} elseif( isset($white_list_settings["users"]) ) {
+		} elseif( is_user_logged_in() && !self::is_not_temp_admin() ) {
 			if( !empty($white_list_settings["users"]) && in_array($user_id, $white_list_settings["users"]) ) {
 				$can_access = true;
 			}

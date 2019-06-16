@@ -66,6 +66,6 @@
 			</td>
 		</tr>
 
-		<?php wp_nonce_field( 'wpis_generate_login_url', 'wpis-nonce', true, true ); ?>
+		<?php wp_nonce_field( 'wpis_generate_login_url', 'wpis-nonce-white', true, true ); ?>
 	</table>
 </form>

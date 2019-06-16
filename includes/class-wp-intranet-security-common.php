@@ -315,6 +315,38 @@ class Wp_Intranet_Security_Common {
 	}
 
 	/**
+	 * Get Temporary Logins
+	 *
+	 * @since 1.0
+	 *
+	 * @param string $role
+	 *
+	 * @return array|bool
+	 */
+	public static function get_non_temporary_logins( $role = '' ) {
+
+		$args = array(
+			'fields'     => 'all',
+			'order'      => 'DESC',
+			'role__not_in' => 'Administrator',
+			'orderby'    => 'meta_value',
+			'meta_query' => array(
+				0 => array(
+					'key'   => '_wpis_user',
+					'compare' => 'NOT EXISTS'
+				),
+			),
+		);
+
+		$users = new WP_User_Query( $args );
+
+		$users_data = $users->get_results();
+
+		return $users_data;
+
+	}
+
+	/**
 	 * Format time string
 	 *
 	 * @since 1.0

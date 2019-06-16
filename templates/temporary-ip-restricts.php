@@ -8,7 +8,7 @@
 
 <h2> <?php echo esc_html__( 'IP Restricts', WPIS_LANG ); ?></h2>
 <form method="post">
-	<table class="form-table" id="rsa_handle_fields">
+	<table class="form-table">
 
 		<tr class="form-field">
 			<th scope="row" class="wpis-form-row">
@@ -198,7 +198,7 @@
 				<p class="submit">
 					<input type="submit" class="button button-primary wpis-form-submit-button" value="<?php esc_html_e( 'Submit', WPIS_LANG ); ?>" class="button button-primary" id="generatetemporarylogin" name="generate_temporary_login">
 					<input type="hidden" name="tlwp_settings_data[rsa_options][head_code]" value="302">
-
+					<input type="hidden" name="tab" value="ip-restricts">
 					<input type="hidden" name="tlwp_settings_data[white_list_user_grpups][]" value="<?php echo $white_list_user_grpups; ?>">
 				</p>
 			</td>

@@ -50,8 +50,9 @@ class Wp_Intranet_Security_User {
 		$temp_login				= filter_var(get_user_meta( $user->ID, "_wpis_user", true ), FILTER_VALIDATE_BOOLEAN);
 		$expire					= get_user_meta( $user->ID, "_wpis_expire", true );
 		$expire_string 			= Wp_Intranet_Security_Common::time_elapsed_string( $expire );
+		$temp_login 			= filter_var( get_user_meta( $user_id, "_wpis_user", true ), FILTER_VALIDATE_BOOLEAN);
 
-		$wpis_status = 'Active';
+		$wpis_status = '';
 		if ( Wp_Intranet_Security_Common::is_login_expired( $user->ID ) ) {
 			$wpis_status = 'Expired';
 		}

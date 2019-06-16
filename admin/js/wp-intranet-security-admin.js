@@ -16,6 +16,7 @@
 
 			jQuery( '#add-new-wpis-form-button' ).click(
 				function () {
+
 					jQuery( '#new-wpis-form' ).show();
 					jQuery( '#update-wpis-form' ).hide();
 				}
@@ -31,6 +32,27 @@
 			jQuery( '#cancel-update-login-form' ).click(
 				function () {
 					jQuery( '#update-wpis-form' ).hide();
+				}
+			);
+
+			jQuery("#new-user-type").on("change",
+				function(){
+					var user_type 	= 	jQuery(this).val();
+					if( user_type != "" ) {
+						if( user_type == "new_user" ) {
+							console.log(user_type);
+							jQuery( '#new-temp-login' ).show();
+							jQuery( '#existing-user-wpis-form' ).hide();
+						}
+						if( user_type == "existing_user" ) {
+							console.log(user_type);
+							jQuery( '#existing-user-wpis-form' ).show();
+							jQuery( '#new-temp-login' ).hide();
+						}
+					} else {
+						jQuery( '#existing-user-wpis-form' ).hide();
+						jQuery( '#new-temp-login' ).hide();
+					}
 				}
 			);
 
