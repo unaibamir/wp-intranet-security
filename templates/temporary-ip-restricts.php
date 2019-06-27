@@ -12,29 +12,14 @@
 
 		<tr class="form-field">
 			<th scope="row" class="wpis-form-row">
-				<label for="redirect"><?php echo esc_html__( 'Site Visibility', WPIS_LANG ); ?></label>
+				<label for="rsa-site-restrict"><?php echo esc_html__( 'Site Visibility', WPIS_LANG ); ?></label>
 			</th>
 			<td>
-				<fieldset>
-					<legend class="screen-reader-text">
-						<span><?php echo esc_html__( 'Site Visibility', WPIS_LANG ); ?> </span>
-					</legend>
-					<input id="blog-public" type="radio" <?php checked( $blog_public, 1 ); ?> name="tlwp_settings_data[blog_public]" value="1">
-					<label for="blog-public"><?php echo esc_html__( 'Allow search engines to index this site', WPIS_LANG ); ?></label>
-					
-					<br>
-					
-					<input id="blog-norobots" type="radio" <?php checked( $blog_public, 0 ); ?> name="tlwp_settings_data[blog_public]" value="0">
-					<label for="blog-norobots"><?php echo esc_html__( 'Discourage search engines from indexing this site', WPIS_LANG ); ?></label>
-					<p class="description"><?php echo esc_html__( 'Note: Neither of these options blocks access to your site — it is up to search engines to honor your request', WPIS_LANG ); ?>.</p>
-
-					<p>
-						<input id="blog-restricted" type="radio" <?php checked( $blog_public, 2 ); ?> name="tlwp_settings_data[blog_public]" value="2">
-						<label for="blog-restricted">
-							<?php echo esc_html__( 'Restrict site access to visitors who are logged in or allowed by IP address', WPIS_LANG ); ?>
-						</label>
-					</p>
-				</fieldset>
+				<label class="switch">
+					<input type="checkbox" id="rsa-site-restrict" name="tlwp_settings_data[rsa_options][site_restrict]" <?php checked( $rsa_options["site_restrict"], 1, true ); ?> value="1">
+					<span class="slider"></span>
+				</label>
+				<p class="description"><?php echo esc_html__( 'Restrict site access to visitors who are logged in or allowed by IP address', WPIS_LANG ); ?></p>
 			</td>
 		</tr>
 		
@@ -103,9 +88,7 @@
 			</th>
 			<td>
 				<?php
-
 				$message = !empty( $rsa_options["message"] ) ? $rsa_options["message"] : esc_html__( 'Access to this site is restricted.', WPIS_LANG );
-
 				wp_editor(
 					$message,
 					'rsa_message',
@@ -116,7 +99,7 @@
 						'tinymce'       => false,
 					)
 				);
-		?>
+				?>
 			</td>
 		</tr>
 
@@ -136,6 +119,41 @@
 					)
 				);
 				?>
+			</td>
+		</tr>
+
+
+		<tr class="form-field">
+			<th scope="row" class="wpis-form-row">
+				<label for="temp_mail_msg"><?php echo esc_html__( 'Temporary User Password Recovery Email Content', WPIS_LANG ); ?></label>
+			</th>
+			<td>
+				<?php
+				$message = !empty( $rsa_options["mail_msg"] ) ? $rsa_options["mail_msg"] : esc_html__( 'Access to this site is restricted.', WPIS_LANG );
+				wp_editor(
+					$message,
+					'temp_mail_msg',
+					array(
+						'media_buttons' => true,
+						'textarea_name' => 'tlwp_settings_data[rsa_options][mail_msg]',
+						'textarea_rows' => 4,
+						'tinymce'       => true,
+					)
+				);
+				?>
+
+				<p class="description">
+					<?php echo esc_html__( "The following template tags are available for use in all of the email settings below.", WPIS_LANG ); ?>
+				</p>
+				<ul>
+					<li><em>%username%</em> - <?php echo esc_html__( 'The user name of the member on the site', WPIS_LANG ); ?></li>
+					<li><em>%firstname%</em> - <?php echo esc_html__( 'The first name of the member', WPIS_LANG ); ?></li>
+					<li><em>%lastname%</em> - <?php echo esc_html__( 'The last name of the member', WPIS_LANG ); ?></li>
+					<li><em>%displayname%</em> - <?php echo esc_html__( 'The display name of the member', WPIS_LANG ); ?></li>
+					<li><em>%sitename%</em> - <?php echo esc_html__( 'The site name', WPIS_LANG ); ?></li>
+					<li><em>%sitelink%</em> - <?php echo esc_html__( 'The site link', WPIS_LANG ); ?></li>
+					<li><em>%recoverylink%</em> - <?php echo esc_html__( 'The recover link which will be sent to user', WPIS_LANG ); ?></li>
+				</ul>
 			</td>
 		</tr>
 

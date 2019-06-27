@@ -85,7 +85,7 @@ class Wp_Intranet_Security {
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'manage_temporary_login' );
 		$this->loader->add_action( 'admin_notices', $plugin_admin, 'display_admin_notices' );
 		$this->loader->add_action( 'wp_ajax_rsa_ip_check', $plugin_admin, 'ajax_rsa_ip_check' );
-		$this->loader->add_action( 'blog_privacy_selector', $plugin_admin, 'blog_privacy_selector' );
+		//$this->loader->add_action( 'blog_privacy_selector', $plugin_admin, 'blog_privacy_selector' );
 		$this->loader->add_action( 'parse_request', $plugin_admin, 'restrict_access' );
 		/*$this->loader->add_action( 'show_user_profile', $plugin_user, 'extra_user_profile_fields', 9 );
 		$this->loader->add_action( 'edit_user_profile', $plugin_user, 'extra_user_profile_fields', 9 );

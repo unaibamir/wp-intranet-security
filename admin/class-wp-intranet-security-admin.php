@@ -280,6 +280,7 @@ class Wp_Intranet_Security_Admin {
 				update_user_meta( $user_id, '_wpis_created', Wp_Intranet_Security_Common::get_current_gmt_timestamp() );
 				update_user_meta( $user_id, '_wpis_expire', Wp_Intranet_Security_Common::get_user_expire_time( $expiry_option, $date ) );
 				update_user_meta( $user_id, '_wpis_token', Wp_Intranet_Security_Common::generate_wpis_token( $user_id ) );
+				update_user_meta( $user_id, '_wpis_existing_user', 1 );
 
 				update_user_meta( $user_id, 'show_welcome_panel', 0 );
 
@@ -322,26 +323,13 @@ class Wp_Intranet_Security_Admin {
 
 		$rsa_options 		= !empty( $_POST["tlwp_settings_data"]["rsa_options"] ) ? self::sanitize_options( $_POST["tlwp_settings_data"]["rsa_options"] ) : $tlwp_settings["rsa_options"];
 
-		/*$white_list_user_grpups 	= $_POST["tlwp_settings_data"]["white_list_user_grpups"];
-		$white_list_users		 	= $_POST["tlwp_settings_data"]["white_list_users"];*/
-
 		$_POST["tlwp_settings_data"]["rsa_options"]  			= $rsa_options;
-		/*$_POST['tlwp_settings_data']["white_list_user_grpups"]  = $white_list_user_grpups;
-		$_POST['tlwp_settings_data']["white_list_users"]  		= $white_list_users;
-
-		if ( class_exists( 'SFWD_LMS' ) ) {
-			$white_list_ld_user_groups = $_POST["tlwp_settings_data"]["white_list_ld_user_groups"];
-			$_POST['tlwp_settings_data']["white_list_ld_user_groups"]  = $white_list_ld_user_groups;
-		}*/
 
 		$data 						= $_POST['tlwp_settings_data'];
 
 		$default_role        		= isset( $data['default_role'] ) ? $data['default_role'] : 'administrator';
 		$default_expiry_time 		= isset( $data['default_expiry_time'] ) ? $data['default_expiry_time'] : 'week';
 		$visible_roles       		= isset( $data['visible_roles'] ) ? $data['visible_roles'] : array();
-		/*$white_list_user_grpups    	= isset( $data['white_list_user_grpups'] ) ? $data['white_list_user_grpups'] : array();
-		$white_list_ld_user_groups	= isset( $data['white_list_ld_user_groups'] ) ? $data['white_list_ld_user_groups'] : array();
-		$white_list_users			= isset( $data['white_list_users'] ) ? $data['white_list_users'] : array();*/
 		$ip_restricted       		= isset( $data['ip_restricted'] ) ? $data['ip_restricted'] : array();
 		$rsa_options       			= isset( $data["rsa_options"] ) ? $data["rsa_options"] : array();
 
@@ -354,14 +342,10 @@ class Wp_Intranet_Security_Admin {
 			'default_role'        		=> $default_role,
 			'default_expiry_time' 		=> $default_expiry_time,
 			'visible_roles'       		=> $visible_roles,
-			/*'white_list_user_grpups'    => $white_list_user_grpups,
-			'white_list_ld_user_groups' => $white_list_ld_user_groups,
-			'white_list_users' 			=> $white_list_users,*/
 			'rsa_options'		  		=> $rsa_options
 		);
-
+		
 		update_option( 'tlwp_settings', "");
-		update_option( 'blog_public', $_POST["tlwp_settings_data"]["blog_public"]);
 
 		$update = update_option( 'tlwp_settings', maybe_serialize( $tlwp_settings ), true );
 
@@ -496,7 +480,8 @@ class Wp_Intranet_Security_Admin {
 					);
 				}
 			} elseif ( 'delete' === $action ) {
-				$delete_user = wp_delete_user( $user_id, get_current_user_id() );
+
+				/*$delete_user = wp_delete_user( $user_id, get_current_user_id() );
 
 				// delete user from Multisite network too!
 				if ( is_multisite() ) {
@@ -507,7 +492,20 @@ class Wp_Intranet_Security_Admin {
 						revoke_super_admin( $user_id );
 					}
 					$delete_user = wpmu_delete_user( $user_id );
+				}*/
+
+				// check if user is not existing on WP. If not, send a password recovery because their password is auto generated.
+				
+				$existing_user = get_user_meta( $user_id, "_wpis_existing_user", true );
+				if( empty($existing_user) || $existing_user != 1) {
+					$this->send_password_recovery_mail( $user_id );
 				}
+
+				delete_user_meta( $user_id, "_wpis_user");
+				delete_user_meta( $user_id, "_wpis_created");
+				delete_user_meta( $user_id, "_wpis_expire");
+				delete_user_meta( $user_id, "_wpis_token");
+				delete_user_meta( $user_id, "_wpis_existing_user");
 
 				if ( ! is_wp_error( $delete_user ) ) {
 					$result = array(
@@ -555,6 +553,59 @@ class Wp_Intranet_Security_Admin {
 		$redirect_link = Wp_Intranet_Security_Common::get_redirect_link( $result );
 		wp_redirect( $redirect_link, 302 );
 		exit();
+	}
+
+	/**
+	 * Send Password Recovery Link to Non Existing User
+	 *
+	 * @since 1.0
+	 */
+	public function send_password_recovery_mail( $user_id ) {
+
+		$mail_msg 		=	$this->temp_options["rsa_options"]["mail_msg"];
+
+		$user_data 		= 	get_user_by( 'ID', $user_id );
+
+		// Redefining user_login ensures we return the right case in the email.
+		$user_login = $user_data->user_login;
+		$user_email = $user_data->user_email;
+		$key        = get_password_reset_key( $user_data );
+		$key_link 	= network_site_url( "wp-login.php?action=rp&key=$key&login=" . rawurlencode( $user_login ), 'login' );
+
+		if ( is_multisite() ) {
+		$site_name = get_network()->site_name;
+		} else {
+			/*
+			 * The blogname option is escaped with esc_html on the way into the database
+			 * in sanitize_option we want to reverse this for the plain text arena of emails.
+			 */
+			$site_name = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+		}
+
+		/* translators: Password reset email subject. %s: Site name */
+		$title = sprintf( __( '[%s] Password Reset' ), $site_name );
+
+		/**
+		 * Filters the subject of the password reset email.
+		 *
+		 * @since 2.8.0
+		 * @since 4.4.0 Added the `$user_login` and `$user_data` parameters.
+		 *
+		 * @param string  $title      Default email title.
+		 * @param string  $user_login The username for the user.
+		 * @param WP_User $user_data  WP_User object.
+		 */
+		$title = apply_filters( 'retrieve_password_title', $title, $user_login, $user_data );
+
+		$mail_msg = str_replace( '%username%', $user_login, $mail_msg );
+		$mail_msg = str_replace( '%firstname%', $user_data->first_name, $mail_msg );
+		$mail_msg = str_replace( '%lastname%', $user_data->last_name, $mail_msg );
+		$mail_msg = str_replace( '%displayname%', $user_data->display_name, $mail_msg );
+		$mail_msg = str_replace( '%sitename%', $site_name, $mail_msg );
+		$mail_msg = str_replace( '%sitelink%', get_bloginfo( "url" ), $mail_msg );
+		$mail_msg = str_replace( '%recoverylink%', $key_link, $mail_msg );
+
+		wp_mail( $user_email, wp_specialchars_decode( $title ), $mail_msg );
 	}
 
 	/**
@@ -812,12 +863,13 @@ class Wp_Intranet_Security_Admin {
 		}
 
 		global $allowedtags;
-		$new_input['message'] = wp_kses( $input['message'], $allowedtags );
-
+		$new_input['message'] 		= wp_kses( $input['message'], $allowedtags );
+		$new_input['site_restrict'] = empty( $input['site_restrict'] ) ? 0 : (int) $input['site_restrict'];
 		$new_input['redirect_path'] = empty( $input['redirect_path'] ) ? 0 : 1;
 		$new_input['head_code']     = in_array( (int) $input['head_code'], array( 301, 302, 307 ), true ) ? (int) $input['head_code'] : 302;
 		$new_input['redirect_url']  = empty( $input['redirect_url'] ) ? '' : esc_url_raw( $input['redirect_url'], array( 'http', 'https' ) );
 		$new_input['page']          = empty( $input['page'] ) ? 0 : (int) $input['page'];
+		$new_input['mail_msg'] 		= wp_kses( $input['mail_msg'], $allowedtags );
 
 		$new_input['allowed'] = array();
 		if ( ! empty( $input['allowed'] ) && is_array( $input['allowed'] ) ) {
@@ -1013,12 +1065,12 @@ class Wp_Intranet_Security_Admin {
 	 * Determine if site should be restricted
 	 */
 	protected static function is_restricted() {
+		
+		$temp_options 	= maybe_unserialize( get_option( 'tlwp_settings', array() ) );
+		$blog_public 	= $temp_options["rsa_options"]["site_restrict"];
+		$user_check 	= self::user_can_access();
 
-		$blog_public = get_option( 'blog_public', 2 );
-
-		$user_check = self::user_can_access();
-
-		$checks = is_admin() || $user_check || 2 !== (int) $blog_public || ( defined( 'WP_INSTALLING' ) && isset( $_GET['key'] ) );
+		$checks = is_admin() || $user_check || 1 !== (int) $blog_public || ( defined( 'WP_INSTALLING' ) && isset( $_GET['key'] ) );
 
 		return ! $checks;
 	}
