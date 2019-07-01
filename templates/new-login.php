@@ -20,7 +20,9 @@ $users = Wp_Intranet_Security_Common::get_non_temporary_logins();
 					<select name="wpis_data[user_type]" id="new-user-type">
 						<option value=""><?php _e("Please Select", WPIS_LANG); ?></option>
 						<option value="new_user"><?php _e("New Temporary User", WPIS_LANG); ?></option>
-						<option value="existing_user"><?php _e("Existing User", WPIS_LANG); ?></option>
+						<?php if( !empty( $users ) ) : ?>
+							<option value="existing_user"><?php _e("Existing User", WPIS_LANG); ?></option>
+						<?php endif; ?>
 					</select>
 				</td>
 			</tr>
