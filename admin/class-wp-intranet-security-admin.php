@@ -397,7 +397,7 @@ class Wp_Intranet_Security_Admin {
 	 *
 	 * @since 1.0
 	 */
-	public static function manage_temporary_login() {
+	public function manage_temporary_login() {
 
 		// Don't have wpis_action or user_id? Say Good Bye...
 		if ( empty( $_REQUEST['wpis_action'] ) || empty( $_REQUEST['user_id'] ) ) {
@@ -701,11 +701,8 @@ class Wp_Intranet_Security_Admin {
 	 * @return array
 	 */
 	public function plugin_add_settings_link( $links ) {
-
-		$settings_link = '<a href="'. admin_url( "options-reading.php" ) .'">' . __( 'Site Visibility' ) . '</a>';
-		$settings_link .= ' | <a href="'. admin_url( "options-general.php?page=wp-intranet-security" ) .'">' . __( 'Settings' ) . '</a>';
+		$settings_link = '<a href="'. admin_url( "options-general.php?page=wp-intranet-security" ) .'">' . __( 'Settings' ) . '</a>';
 		$links[]       = $settings_link;
-
 		return $links;
 	}
 
@@ -982,7 +979,7 @@ class Wp_Intranet_Security_Admin {
 				}
 			}
 		}
-
+		
 		if( $is_restricted ) {
 			$can_access 	= false;
 		}
@@ -1069,7 +1066,7 @@ class Wp_Intranet_Security_Admin {
 		$temp_options 	= maybe_unserialize( get_option( 'tlwp_settings', array() ) );
 		$blog_public 	= $temp_options["rsa_options"]["site_restrict"];
 		$user_check 	= self::user_can_access();
-
+		
 		$checks = is_admin() || $user_check || 1 !== (int) $blog_public || ( defined( 'WP_INSTALLING' ) && isset( $_GET['key'] ) );
 
 		return ! $checks;
@@ -1100,10 +1097,6 @@ class Wp_Intranet_Security_Admin {
 			return $access;
 		}
 
-		if ( !is_user_logged_in() ) {
-			return;
-		}
-
 		$can_access 			= false;
 		$user 					= wp_get_current_user();
 		$user_id 				= $user->ID;
@@ -1114,6 +1107,7 @@ class Wp_Intranet_Security_Admin {
 		if ( is_user_logged_in() && self::is_not_temp_admin() ) {
 			$can_access = true;
 		} elseif( is_user_logged_in() && !self::is_not_temp_admin() ) {
+
 			if( !empty($white_list_settings["users"]) && in_array($user_id, $white_list_settings["users"]) ) {
 				$can_access = true;
 			}
@@ -1123,10 +1117,43 @@ class Wp_Intranet_Security_Admin {
 			else if( !empty($white_list_settings["ld_user_groups"]) && !empty( array_intersect($white_list_settings["ld_user_groups"], $group_ids) ) ) {
 				$can_access = true;
 			}
-		} else {
-			$can_access = false;
-		}
 
+		} elseif( !is_user_logged_in() ) {
+			
+			$allowed_ips = self::get_config_ips();
+			if ( !empty( self::$rsa_options['allowed'] ) && is_array( self::$rsa_options['allowed'] ) ) {
+				$allowed_ips = array_merge( $allowed_ips, self::$rsa_options['allowed'] );
+			}
+
+			// check for the allow list, if its empty block everything.
+			if ( count( $allowed_ips ) > 0 ) {
+				$remote_ip = self::get_client_ip_address();
+
+				// iterate through the allow list.
+				foreach ( $allowed_ips as $line ) {
+					if ( self::ip_in_range( $remote_ip, $line ) ) {
+
+						/**
+						 * Fires when an ip address match occurs.
+						 *
+						 * Enables adding session_start() to the IP check, ensuring Varnish type cache will
+						 * not cache the request. Passes the matched line; previous to 6.1.0 this action passed
+						 * the matched ip and mask.
+						 *
+						 * @since 6.0.2
+						 *
+						 * @param string $remote_ip The remote IP address being checked.
+						 * @param string $line      The matched masked IP address.
+						 */
+						do_action( 'wpis_restrict_site_access_ip_match', $remote_ip, $line );
+						$can_access = true;
+					}
+				}
+			}
+		} else {
+			$can_access = true;
+		}
+		
 		return apply_filters( "wpis_user_can_access", $can_access, $user );
 	}
 

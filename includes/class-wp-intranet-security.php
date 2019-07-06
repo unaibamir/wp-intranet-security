@@ -58,7 +58,6 @@ class Wp_Intranet_Security {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-wp-intranet-security-public.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-intranet-security-common.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wp-intranet-security-layout.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-wp-intranet-security-user-fields.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-wpis-system-info.php';
 
 		$this->loader = new Wp_Intranet_Security_Loader();
@@ -72,7 +71,6 @@ class Wp_Intranet_Security {
 	private function define_admin_hooks() {
 
 		$plugin_admin 	= new Wp_Intranet_Security_Admin( $this->get_plugin_name(), $this->get_version() );
-		$plugin_user 	= new Wp_Intranet_Security_User( $this->get_plugin_name(), $this->get_version() );
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
@@ -85,14 +83,7 @@ class Wp_Intranet_Security {
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'manage_temporary_login' );
 		$this->loader->add_action( 'admin_notices', $plugin_admin, 'display_admin_notices' );
 		$this->loader->add_action( 'wp_ajax_rsa_ip_check', $plugin_admin, 'ajax_rsa_ip_check' );
-		//$this->loader->add_action( 'blog_privacy_selector', $plugin_admin, 'blog_privacy_selector' );
 		$this->loader->add_action( 'parse_request', $plugin_admin, 'restrict_access' );
-		/*$this->loader->add_action( 'show_user_profile', $plugin_user, 'extra_user_profile_fields', 9 );
-		$this->loader->add_action( 'edit_user_profile', $plugin_user, 'extra_user_profile_fields', 9 );
-		$this->loader->add_action( 'personal_options_update', $plugin_user, 'save_module_user_profile_fields', 9 );
-		$this->loader->add_action( 'edit_user_profile_update', $plugin_user, 'save_module_user_profile_fields', 9 );
-		$this->loader->add_action( 'manage_users_columns', $plugin_user, 'wpis_user_list_columns', 10 );
-		$this->loader->add_action( 'manage_users_custom_column', $plugin_user, 'wpis_list_column_content', 10, 3 );*/
 
 		$this->loader->add_filter( 'plugin_action_links', $plugin_admin, 'disable_plugin_deactivation', 10, 4 );
 		$this->loader->add_filter( 'plugin_action_links_' . WPIS_PLUGIN_BASE_NAME, $plugin_admin, 'plugin_add_settings_link', 10, 4 );
