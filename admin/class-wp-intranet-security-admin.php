@@ -248,6 +248,9 @@ class Wp_Intranet_Security_Admin {
 					);
 
 					$user_id       = isset( $user['user_id'] ) ? $user['user_id'] : 0;
+					
+					update_user_meta( $user_id, '_wpis_existing_user', 0 );
+					
 					$redirect_link = Wp_Intranet_Security_Common::get_redirect_link( $result );
 					$redirect_link = add_query_arg( 'wpis_generated_url', Wp_Intranet_Security_Common::get_login_url( $user_id ), $redirect_link );
 					$redirect_link = add_query_arg( 'user_email', $email, $redirect_link );
@@ -570,13 +573,15 @@ class Wp_Intranet_Security_Admin {
 		$user_login = $user_data->user_login;
 		$user_email = $user_data->user_email;
 		$key        = get_password_reset_key( $user_data );
+		
 		if ( $key instanceof WP_Error || is_wp_error( $key ) ) {
 			return;
 		}
+
 		$key_link 	= network_site_url( "wp-login.php?action=rp&key=$key&login=" . rawurlencode( $user_login ), 'login' );
 
 		if ( is_multisite() ) {
-		$site_name = get_network()->site_name;
+			$site_name = get_network()->site_name;
 		} else {
 			/*
 			 * The blogname option is escaped with esc_html on the way into the database

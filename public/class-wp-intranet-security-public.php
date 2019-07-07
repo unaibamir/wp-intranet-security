@@ -179,7 +179,7 @@ class Wp_Intranet_Security_Public {
 	public function disable_password_reset( $allow, $user_id ) {
 
 		if ( is_int( $user_id ) ) {
-			$check_expiry             = false;
+			$check_expiry             = true;
 			$is_valid_temporary_login = Wp_Intranet_Security_Common::is_valid_temporary_login( $user_id, $check_expiry );
 			if ( $is_valid_temporary_login ) {
 				$allow = false;
