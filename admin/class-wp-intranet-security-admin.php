@@ -570,6 +570,9 @@ class Wp_Intranet_Security_Admin {
 		$user_login = $user_data->user_login;
 		$user_email = $user_data->user_email;
 		$key        = get_password_reset_key( $user_data );
+		if ( $key instanceof WP_Error || is_wp_error( $key ) ) {
+			return;
+		}
 		$key_link 	= network_site_url( "wp-login.php?action=rp&key=$key&login=" . rawurlencode( $user_login ), 'login' );
 
 		if ( is_multisite() ) {
