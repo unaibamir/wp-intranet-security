@@ -329,7 +329,6 @@ class Wp_Intranet_Security_Common {
 			'fields'     => 'all',
 			'order'      => 'DESC',
 			'role__not_in' => 'Administrator',
-			'orderby'    => 'meta_value',
 			'meta_query' => array(
 				0 => array(
 					'key'   => '_wpis_user',

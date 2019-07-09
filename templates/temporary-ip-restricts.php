@@ -17,7 +17,7 @@
 			<td>
 				<label class="switch">
 					<input type="checkbox" id="rsa-site-restrict" name="tlwp_settings_data[rsa_options][site_restrict]" <?php checked( $rsa_options["site_restrict"], 1, true ); ?> value="1">
-					<span class="slider"></span>
+					<span class="slider round small"></span>
 				</label>
 				<p class="description"><?php echo esc_html__( 'Restrict site access to visitors who are logged in or allowed by IP address', WPIS_LANG ); ?></p>
 			</td>
@@ -68,19 +68,6 @@
 				</fieldset>
 			</td>
 		</tr>
-		
-		<!-- <tr class="form-field">
-			<th scope="row" class="wpis-form-row">
-				<label for="redirect_code"><?php echo esc_html__( 'Redirection status code', WPIS_LANG ); ?></label>
-			</th>
-			<td>
-				<select name="tlwp_settings_data[rsa_options][head_code]" id="redirect_code" class="rsa_redirect_field">
-					<option value="301" <?php  selected( $rsa_options["head_code"], 301, true ) ?>><?php esc_html_e( '301 Permanent', WPIS_LANG ); ?></option>
-					<option value="302" <?php  selected( $rsa_options["head_code"], 302, true ) ?>><?php esc_html_e( '302 Undefined', WPIS_LANG ); ?></option>
-					<option value="307" <?php  selected( $rsa_options["head_code"], 307, true ) ?>><?php esc_html_e( '307 Temporary', WPIS_LANG ); ?></option>
-				</select>
-			</td>
-		</tr> -->
 
 		<tr class="form-field">
 			<th scope="row" class="wpis-form-row">
@@ -100,6 +87,18 @@
 					)
 				);
 				?>
+			</td>
+		</tr>
+
+		<tr class="form-field">
+			<th scope="row" class="wpis-form-row">
+				<label for="enable_emails"><?php echo esc_html__( 'Enable Emails', WPIS_LANG ); ?></label>
+			</th>
+			<td>
+				<label class="switch">
+					<input type="checkbox" id="enable_emails" name="tlwp_settings_data[rsa_options][enable_emails]" <?php checked( $rsa_options["enable_emails"], 1, true ); ?> value="1">
+					<span class="slider round small"></span>
+				</label>
 			</td>
 		</tr>
 

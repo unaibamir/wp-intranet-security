@@ -62,7 +62,11 @@ class Wp_Intranet_Security_Admin {
 	 *
 	 * @since 1.0
 	 */
-	public function enqueue_styles() {
+	public function enqueue_styles( $hook ) {
+
+		if(	$hook != 'settings_page_wp-intranet-security') {
+			return;
+        }
 
 		wp_enqueue_style( 'select2css', plugin_dir_url( __FILE__ ) . 'css/select2.min.css', array(), $this->version, 'all' );
 
@@ -76,7 +80,11 @@ class Wp_Intranet_Security_Admin {
 	 *
 	 * @since 1.0
 	 */
-	public function enqueue_scripts() {
+	public function enqueue_scripts( $hook ) {
+
+		if(	$hook != 'settings_page_wp-intranet-security') {
+			return;
+        }
 
 		wp_enqueue_script( 'select2js', plugin_dir_url( __FILE__ ) . 'js/select2.min.js', array( 'jquery' ), $this->version, false );
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/wp-intranet-security-admin.js', array( 'jquery', 'select2js' ), $this->version, false );
@@ -484,23 +492,9 @@ class Wp_Intranet_Security_Admin {
 				}
 			} elseif ( 'delete' === $action ) {
 
-				/*$delete_user = wp_delete_user( $user_id, get_current_user_id() );
-
-				// delete user from Multisite network too!
-				if ( is_multisite() ) {
-
-					// If it's a super admin, we can't directly delete user from network site.
-					// We need to revoke super admin access first and then delete user
-					if ( is_super_admin( $user_id ) ) {
-						revoke_super_admin( $user_id );
-					}
-					$delete_user = wpmu_delete_user( $user_id );
-				}*/
-
 				// check if user is not existing on WP. If not, send a password recovery because their password is auto generated.
-				
 				$existing_user = get_user_meta( $user_id, "_wpis_existing_user", true );
-				if( empty($existing_user) || $existing_user != 1) {
+				if( $this->temp_options["rsa_options"]["enable_emails"] == 1 && ( empty($existing_user) || $existing_user != 1 ) ) {
 					$this->send_password_recovery_mail( $user_id );
 				}
 
@@ -575,6 +569,7 @@ class Wp_Intranet_Security_Admin {
 		$key        = get_password_reset_key( $user_data );
 		
 		if ( $key instanceof WP_Error || is_wp_error( $key ) ) {
+			dd($key);
 			return;
 		}
 
@@ -874,6 +869,7 @@ class Wp_Intranet_Security_Admin {
 		$new_input['head_code']     = in_array( (int) $input['head_code'], array( 301, 302, 307 ), true ) ? (int) $input['head_code'] : 302;
 		$new_input['redirect_url']  = empty( $input['redirect_url'] ) ? '' : esc_url_raw( $input['redirect_url'], array( 'http', 'https' ) );
 		$new_input['page']          = empty( $input['page'] ) ? 0 : (int) $input['page'];
+		$new_input['enable_emails'] = empty( $input['enable_emails'] ) ? 0 : (int) $input['enable_emails'];
 		$new_input['mail_msg'] 		= wp_kses( $input['mail_msg'], $allowedtags );
 
 		$new_input['allowed'] = array();

@@ -34,12 +34,12 @@ $users = Wp_Intranet_Security_Common::get_non_temporary_logins();
 					<tr>
 						<th><label for="existing_user_id"><?php _e("Select User", WPIS_LANG); ?></label></th>
 						<td>
-							<select name="wpis_data[existing_user_id]" id="existing_user_id">
+							<select name="wpis_data[existing_user_id]" id="existing_user_id" class="select2-dropdown">
 								<option value=""><?php _e("Please Select User", WPIS_LANG); ?></option>
 								<?php foreach ($users as $user) {
 									?>
 									<option value="<?php echo $user->ID ?>">
-										<?php echo $user->user_login; ?> (<?php echo $user->roles[0]; ?>)
+										<?php echo $user->user_login; ?> - <?php echo $user->user_email; ?> (<?php echo $user->roles[0]; ?>)
 									</option>
 									<?php
 								} 
