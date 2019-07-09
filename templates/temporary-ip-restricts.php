@@ -92,18 +92,6 @@
 
 		<tr class="form-field">
 			<th scope="row" class="wpis-form-row">
-				<label for="enable_emails"><?php echo esc_html__( 'Enable Emails', WPIS_LANG ); ?></label>
-			</th>
-			<td>
-				<label class="switch">
-					<input type="checkbox" id="enable_emails" name="tlwp_settings_data[rsa_options][enable_emails]" <?php checked( $rsa_options["enable_emails"], 1, true ); ?> value="1">
-					<span class="slider round small"></span>
-				</label>
-			</td>
-		</tr>
-
-		<tr class="form-field">
-			<th scope="row" class="wpis-form-row">
 				<label for="rsa_page"><?php echo esc_html__( 'Restricted notice page', WPIS_LANG ); ?></label>
 			</th>
 			<td>
@@ -121,6 +109,18 @@
 			</td>
 		</tr>
 
+		<tr class="form-field">
+			<th scope="row" class="wpis-form-row">
+				<label for="enable_emails"><?php echo esc_html__( 'Enable Emails', WPIS_LANG ); ?></label>
+			</th>
+			<td>
+				<label class="switch">
+					<?php $enable_emails = isset($rsa_options["enable_emails"]) ? $rsa_options["enable_emails"] : 0; ?>
+					<input type="checkbox" id="enable_emails" name="tlwp_settings_data[rsa_options][enable_emails]" <?php checked( $enable_emails, 1, true ); ?> value="1">
+					<span class="slider round small"></span>
+				</label>
+			</td>
+		</tr>
 
 		<tr class="form-field">
 			<th scope="row" class="wpis-form-row">
