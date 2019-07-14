@@ -40,12 +40,10 @@
 					var user_type 	= 	jQuery(this).val();
 					if( user_type != "" ) {
 						if( user_type == "new_user" ) {
-							console.log(user_type);
 							jQuery( '#new-temp-login' ).show();
 							jQuery( '#existing-user-wpis-form' ).hide();
 						}
 						if( user_type == "existing_user" ) {
-							console.log(user_type);
 							jQuery( '#existing-user-wpis-form' ).show();
 							jQuery( '#new-temp-login' ).hide();
 						}
@@ -83,20 +81,6 @@
 				);
 			}
 
-			jQuery( '#new-user-expiry-time' ).change(
-				function () {
-					var value = jQuery( this ).val();
-					showDatePicker( value, 'new' );
-				}
-			);
-
-			jQuery( '#update-user-expiry-time' ).change(
-				function () {
-					var value = jQuery( this ).val();
-					showDatePicker( value, 'update' );
-				}
-			);
-
 			jQuery( 'a.tlwp-rating-link' ).click(
 				function () {
 					jQuery.post( data.admin_ajax_url, {action: 'tlwp_rated'} );
@@ -111,27 +95,50 @@
 				}
 			);
 
+			jQuery( '#new-user-expiry-time' ).change(
+				function () {
+					var value = jQuery( this ).val();
+					showDatePicker( value, 'new' );
+				}
+			);
+
+			jQuery( '#update-user-expiry-time' ).change(
+				function () {
+					var value = jQuery( this ).val();
+					showDatePicker( value, 'update' );
+				}
+			);
+
+			jQuery( '#existing-user-expiry-time' ).change(
+				function () {
+					var value = jQuery( this ).val();
+					showDatePicker( value, 'new' );
+				}
+			);
+
 			function showDatePicker(value, datePickerClass) {
 
 				var customDatePickerClass = '';
 				var customDatePickerID    = '';
 				if ( 'new' === datePickerClass ) {
 					customDatePickerClass = '.new-custom-date-picker';
-					customDatePickerID    = '#new-custom-date-picker';
+					customDatePickerID    = '.new-custom-date-picker-container';
 				} else {
 					customDatePickerClass = '.update-custom-date-picker';
-					customDatePickerID    = '#update-custom-date-picker';
+					customDatePickerID    = '.update-custom-date-picker-div';
 				}
 
-				if (value === 'custom_date') {
+				if (value === 'custom_date' || value === 'existing_custom_date') {
+
 					var tomorrowDate = new Date( new Date().getTime() + 24 * 60 * 60 * 1000 );
-					jQuery( customDatePickerClass ).datepicker(
-						{
-							dateFormat: 'yy-mm-dd',
-							minDate: tomorrowDate
-						}
-					);
+					console.log(customDatePickerClass);
+					jQuery( customDatePickerClass ).datepicker({
+						dateFormat: 'yy-mm-dd',
+						minDate: tomorrowDate
+					});
+
 					jQuery( customDatePickerID ).show();
+					
 				} else {
 					jQuery( customDatePickerID ).hide();
 				}

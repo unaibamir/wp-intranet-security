@@ -58,8 +58,8 @@ $users = Wp_Intranet_Security_Common::get_non_temporary_logins();
 									</select>
 							</span>
 
-							<span style="display:none;" id="new-custom-date-picker">
-								<input type="date" id="datepicker" name="wpis_data[existing_custom_date]" value="" class="new-custom-date-picker"/>
+							<span style="display:none;" id="new-custom-date-picker" class="new-custom-date-picker-container">
+								<input type="date"  name="wpis_data[existing_custom_date]" value="" class="new-custom-date-picker"/>
 							</span>
 
 						</td>
@@ -130,8 +130,8 @@ $users = Wp_Intranet_Security_Common::get_non_temporary_logins();
 								</select>
 						</span>
 
-						<span style="display:none;" id="new-custom-date-picker">
-							<input type="date" id="datepicker" name="wpis_data[custom_date]" value="" class="new-custom-date-picker"/>
+						<span style="display:none;" id="new-custom-date-picker" class="new-custom-date-picker-container">
+							<input type="date"  name="wpis_data[custom_date]" value="" class="new-custom-date-picker"/>
 						</span>
 
 					</td>

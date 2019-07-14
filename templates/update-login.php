@@ -61,7 +61,7 @@
 						</select>
 				</span>
 
-				<span style="display:none;" id="update-custom-date-picker">
+				<span style="display:none;" id="update-custom-date-picker" class="update-custom-date-picker-div">
 					<input type="date" id="datepicker" name="wpis_data[custom_date]" value="" class="update-custom-date-picker"/>
 				</span>
 
