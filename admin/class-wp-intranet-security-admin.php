@@ -1107,6 +1107,11 @@ class Wp_Intranet_Security_Admin {
 		$user_role 				= $user->roles;
 		$group_ids 				= class_exists( 'SFWD_LMS' ) ? learndash_get_users_group_ids( $user_id ) : array() ;
 		$white_list_settings 	= get_option( 'white_list_settings', array() );
+		$allowed_ips 			= self::get_config_ips();
+		$remote_ip 				= self::get_client_ip_address();
+		if ( !empty( self::$rsa_options['allowed'] ) && is_array( self::$rsa_options['allowed'] ) ) {
+			$allowed_ips = array_merge( $allowed_ips, self::$rsa_options['allowed'] );
+		}
 		
 		if ( is_user_logged_in() && self::is_not_temp_admin() ) {
 			$can_access = true;
@@ -1121,17 +1126,33 @@ class Wp_Intranet_Security_Admin {
 			else if( !empty($white_list_settings["ld_user_groups"]) && !empty( array_intersect($white_list_settings["ld_user_groups"], $group_ids) ) ) {
 				$can_access = true;
 			}
+			else if( count( $allowed_ips ) > 0 ) {
+				// iterate through the allow list.
+				foreach ( $allowed_ips as $line ) {
+					if ( self::ip_in_range( $remote_ip, $line ) ) {
+
+						/**
+						 * Fires when an ip address match occurs.
+						 *
+						 * Enables adding session_start() to the IP check, ensuring Varnish type cache will
+						 * not cache the request. Passes the matched line; previous to 6.1.0 this action passed
+						 * the matched ip and mask.
+						 *
+						 * @since 6.0.2
+						 *
+						 * @param string $remote_ip The remote IP address being checked.
+						 * @param string $line      The matched masked IP address.
+						 */
+						do_action( 'wpis_restrict_site_access_ip_match', $remote_ip, $line );
+						$can_access = true;
+					}
+				}
+			}
 
 		} elseif( !is_user_logged_in() ) {
-			
-			$allowed_ips = self::get_config_ips();
-			if ( !empty( self::$rsa_options['allowed'] ) && is_array( self::$rsa_options['allowed'] ) ) {
-				$allowed_ips = array_merge( $allowed_ips, self::$rsa_options['allowed'] );
-			}
 
 			// check for the allow list, if its empty block everything.
 			if ( count( $allowed_ips ) > 0 ) {
-				$remote_ip = self::get_client_ip_address();
 
 				// iterate through the allow list.
 				foreach ( $allowed_ips as $line ) {
